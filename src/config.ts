@@ -1,0 +1,1 @@
+export const BACKEND_WEBSOCKET_URL = 'ws://localhost:3000'

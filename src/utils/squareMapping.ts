@@ -1,0 +1,13 @@
+export const squareMapping = (row:number,col:number,color:string) => {
+  return color=='white'?String.fromCharCode(97+col)+(8-row):String.fromCharCode(104-col)+(1+row)
+}
+
+export const reverseSquareMapping = (square:string|null, color:string) =>{
+  if(!square) return []
+
+  return [
+    color === 'white' ? 8 - parseInt(square[1]) : parseInt(square[1]) - 1,
+    color === 'white' ? square.charCodeAt(0) - 97 : 104 - square.charCodeAt(0)
+  ];
+}
+
