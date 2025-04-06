@@ -6,6 +6,8 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate } from "react-router-dom";
+import { ColorEnum ,BoardSquare} from "../types/gameTypes";
+import { GameStatus } from "../types/gameTypes";
 
 const Game = () => {
     interface gameResult {
@@ -14,37 +16,40 @@ const Game = () => {
     }
 
     const socket = useSocket();
-    const [chessObj, setChessObj] = useState(new Chess());
-    const [board, setBoard] = useState(chessObj.board());
+    const chessObj = useRef<Chess>(new Chess());
+    const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
     const [moves, setMoves] = useState<string[]>([]);
     const [legalMoves , setLegalMoves] = useState<string[]>([]);
     const [from , setFrom ] = useState<string|null>('');
     const [result , setResult] = useState<string>('');
 
+    const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
     const colorRef = useRef('');
     const navigate = useNavigate();
 
-    const reverseBoard = (board) =>{
+    const reverseBoard = (board:BoardSquare[][]) =>{
       board.reverse().forEach(row => row.reverse());
     }
+    
 
 
     const onClickSquareHandler = (row:number, col:number) =>{
-      if (!socket){
-        console.log('no socket');
+      if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED){
+        console.log('no socket or game is completed');
         return
       }
       const squareClicked = squareMapping(row,col,colorRef.current);
 
-      socket.emit('get_moves',JSON.stringify({"square":squareClicked}))
-
+      
       if (!from){
+        socket.emit('get_moves',JSON.stringify({"square":squareClicked}))
         setFrom(squareClicked)
       }
       else{
         console.log('sending   '+JSON.stringify({"from":from, "to":squareClicked}))
         socket.emit('make_move',JSON.stringify({"from":from, "to":squareClicked}));
         setFrom(null)
+        setLegalMoves([]);
       }
     }
     
@@ -52,67 +57,108 @@ const Game = () => {
     useEffect(() => {
       if (!socket) return ;
 
-      socket.on('join_game',(data)=>{
+      socket.off("join_game").on('join_game',(data)=>{
         let parsedData = JSON.parse(data)
         if (parsedData.message=='Connected'){
-          setChessObj(new Chess())
-          let newBoard = (chessObj.board())
+
+          const chessObject = new Chess()
+          chessObj.current=chessObject
+          let newBoard = chessObject.board()
           colorRef.current=parsedData.color
-          if (parsedData.color=='black'){
+          if (parsedData.color==ColorEnum.BLACK){
             reverseBoard(newBoard)
           }
           setBoard(newBoard)
+
+          navigate(`/game/${parsedData.roomId}`)
         }
       })
 
-      socket.on('game_result',(result:string)=>{
+      socket.off("rejoin_game").on('rejoin_game',(data)=>{
+        const parsedData = JSON.parse(data)
+        console.log('rejoiningggggggg '+JSON.stringify(parsedData))
+        console.log(parsedData.board_status)
+        console.log(typeof parsedData.board_status)
+
+ 
+        const chessObject = new Chess(parsedData.board_status)
+        const restoredOldMoves = parsedData.restoredOldMoves    
+        console.log(chessObject.ascii())
+        
+          chessObj.current=chessObject
+          let newBoard = chessObject.board()
+
+          colorRef.current=parsedData.color
+          if (parsedData.color==ColorEnum.BLACK){
+            reverseBoard(newBoard)
+          }
+          setBoard(newBoard)
+          setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
+      })
+
+      socket.off("game_result").on('game_result',(result:string)=>{
         const parsedResult:gameResult = JSON.parse(result);
 
         if (parsedResult.type=='WIN'){
+          gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(parsedResult.message);
         }
         else if(parsedResult.type=='DRAW'){
+          gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(`DRAW: ${parsedResult.message}`)
         }
+
       })
 
 
 
-        socket.on('message',(data)=>{
-            console.log('message: '+data)
+        socket.off("message").on('message',(data)=>{
+
+            console.log('message recieved from server: '+data)
+            console.log(chessObj.current.ascii())
         })
 
-        socket.on('make_move',(move)=>{
+        socket.off("make_move").on('make_move',(move)=>{
+          console.log('server sent something from make_move '+move)
+          if (!chessObj) return;
+          console.log(chessObj.current.ascii())
           try{
 
-            console.log('this is '+colorRef.current)
               const parsedMove = JSON.parse(move)
-              chessObj.move(parsedMove);
-              let newBoard = chessObj.board();
-              if (colorRef.current == 'black') {
+
+              try{
+
+                chessObj.current.move(parsedMove);
+              }
+              catch(err){
+                console.log('frontend move validation error : '+err)
+              }
+
+              let newBoard = chessObj.current.board();
+              if (colorRef.current == ColorEnum.BLACK) {
                 reverseBoard(newBoard)
-              };
+              }; 
   
               setBoard(newBoard)
               setMoves(prev => [...prev, parsedMove.to])
-              console.log('setting moves')
+              console.log('setting moves ')
+              console.log(chessObj.current.ascii())
           }
           catch(err){
             console.error("ERRROR CAUGHT : "+err)
           }
         })
 
-        socket.on('get_moves',(legalMoves)=>{
+        socket.off("get_possible_moves").on('get_possible_moves',(legalMoves)=>{
           const parsedLegalMoves = JSON.parse(legalMoves)
-          console.log(legalMoves);
 
 
-          const sanitizedLegalMoves = parsedLegalMoves.map((move: string) => {
+          const sanitizedLegalMoves:string[] = parsedLegalMoves.map((move: string) => {
             const destinationSquare = getDestinationSquare(move);
-            console.log(reverseSquareMapping(destinationSquare, colorRef.current));
+            //console.log(reverseSquareMapping(destinationSquare, colorRef.current));
             return reverseSquareMapping(destinationSquare, colorRef.current);
           });
-          console.log(sanitizedLegalMoves)
+          //console.log(sanitizedLegalMoves)
 
             setLegalMoves(sanitizedLegalMoves);
         })
@@ -120,10 +166,15 @@ const Game = () => {
     }, [socket])
 
     const joinGameHandler = ()=>{
-        socket.emit('join_game','join_game');
-        navigate('/game/asdf')
 
+      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game','join_game');
     }
+    
+    const quitGameHandler = ()=>{
+      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
+      navigate('/')
+    }
+    
   
 
   return (
@@ -141,6 +192,7 @@ const Game = () => {
              <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
             </div>:
             <div>
+             {!result && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
             
               <h1 className="text-white text-3xl text-center">Moves Made</h1>
               <div className="flex justify-evenly text-white pt-10 pb-2">

@@ -10,7 +10,10 @@ const useSocket = () => {
       withCredentials:true,
     })
     setSocket(socketObj)
-    console.log('socket connected '+socketObj.id)
+
+    socketObj.on("connect", () => {
+      console.log("Socket connected with ID:", socketObj.id);
+    });
 
     return ()=>{
       console.log('socket disconnected')

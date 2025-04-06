@@ -8,21 +8,22 @@ interface Board {
 
 interface chessBoardProp{
     board:(Board|null)[][];
-    legalMoves: number[][];
+    legalMoves: string[];
     onClickSquare:(row:number,col:number)=>void;
     selectedSquare:number[];
 }
 
 const ChessBoard = ({board , legalMoves, onClickSquare, selectedSquare}:chessBoardProp) => {
+    // {console.log(board)}
   return (
     <div>
       <div>
             {
-                board.map((row,rowIndex)=>{
+                board && board.map((row,rowIndex)=>{
                     return (
                         <div key={rowIndex} className="flex">
                             {row.map((square,colIndex)=>{
-                                const isSelected = selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex;
+                                //const isSelected = selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex;
                                 const isLegalMove = legalMoves.some(([r, c]) => Number(r) === rowIndex && Number(c) === colIndex);
                                 //console.log(isLegalMove)
                                 return (

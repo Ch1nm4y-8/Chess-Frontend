@@ -31,7 +31,7 @@ const ProtectedRoute = () => {
         return <div>Loading..........</div>
     }
     
-  return isAuth? <Outlet/> : <Navigate to="/signup" />
+  return isAuth? <Outlet/> : <Navigate to="/login" />
 }
 
 export default ProtectedRoute
