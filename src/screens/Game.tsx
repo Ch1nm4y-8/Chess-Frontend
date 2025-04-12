@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ColorEnum ,BoardSquare, PlayerRolesEnum} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
+import Input from "../components/Input";
 
 const Game = () => {
     interface gameResult {
@@ -30,6 +31,7 @@ const Game = () => {
     const [result , setResult] = useState<string>('');
     const [playersDetails, setPlayersDetails] = useState<playersDetails>({opponentPlayerName:'Opponent',myPlayerName:'Me'})
     const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
+    const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
     
     const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
     const colorRef = useRef('');
@@ -224,6 +226,11 @@ const Game = () => {
 
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game','join_game');
     }
+
+    const spectateGameHandler = ()=>{
+      if (!socket) {console.log('no socket'); return}
+      navigate('/game/'+gameIdToSpectate)
+    }
     
     const quitGameHandler = ()=>{
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
@@ -243,8 +250,15 @@ const Game = () => {
             
             {
               !colorRef.current?
-            <div className="flex justify-center">
+            <div className="flex flex-col gap-10 justify-center">
              <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
+
+             <div className="flex items-center">
+             <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
+             <Button onClick={()=>{spectateGameHandler()}}>SPECTATE GAME</Button>
+             </div>
+             
+             
             </div>:
             <div>
              {!result && playerRole==PlayerRolesEnum.PLAYER && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
