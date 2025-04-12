@@ -32,6 +32,7 @@ const Game = () => {
     const [playersDetails, setPlayersDetails] = useState<playersDetails>({opponentPlayerName:'Opponent',myPlayerName:'Me'})
     const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
+    const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
     
     const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
     const colorRef = useRef('');
@@ -223,13 +224,24 @@ const Game = () => {
     }, [socket])
 
     const joinGameHandler = ()=>{
-
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game','join_game');
     }
 
     const spectateGameHandler = ()=>{
       if (!socket) {console.log('no socket'); return}
       navigate('/game/'+gameIdToSpectate)
+    }
+    
+    const createGameHandler = ()=>{
+      if (!socket) {console.log('no socket'); return}
+      
+      socket.emit('create_invite_game','create_invite_game')
+    }
+    
+    const joinWithFriendsGameHandler = () =>{
+      if (!socket) {console.log('no socket'); return}
+      
+      socket.emit('join_invite_game',JSON.stringify({'inviteGameId':inviteGameIdToJoin}))
     }
     
     const quitGameHandler = ()=>{
@@ -252,6 +264,12 @@ const Game = () => {
               !colorRef.current?
             <div className="flex flex-col gap-10 justify-center">
              <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
+             <Button onClick={()=>{createGameHandler()}}>CREATE GAME(Play With Friends)</Button>
+
+             <div className="flex items-center">
+             <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
+             <Button onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
+             </div>
 
              <div className="flex items-center">
              <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
