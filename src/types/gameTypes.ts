@@ -11,8 +11,14 @@ export enum GameStatus {
     DRAW = "DRAW"
 }
 
+export enum PlayerRolesEnum{
+    PLAYER = "PLAYER",
+    SPECTATOR = "SPECTATOR",
+}
+
 export type BoardSquare = {
     square: Square;
     type: PieceSymbol;
     color: Color;
   } | null;
+

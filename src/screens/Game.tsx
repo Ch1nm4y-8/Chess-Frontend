@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import Button from "../components/Button";
 import ChessBoard from "../components/ChessBoard";
 import useSocket from "../hooks/useSocket";
+import MovesView from "../components/MovesView";
 import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
 
@@ -26,13 +27,14 @@ const Game = () => {
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
     const [moves, setMoves] = useState<string[]>([]);
     const [legalMoves , setLegalMoves] = useState<string[]>([]);
-    const fromMove = useRef<string|null>(null);
     const [result , setResult] = useState<string>('');
     const [playersDetails, setPlayersDetails] = useState<playersDetails>({opponentPlayerName:'Opponent',myPlayerName:'Me'})
-
+    const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
+    
     const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
     const colorRef = useRef('');
-    const moveRef = useRef<HTMLDivElement>(null);
+    
+    const fromMove = useRef<string|null>(null);
     const navigate = useNavigate();
     const {gameId} = useParams();
   
@@ -75,9 +77,7 @@ const Game = () => {
       }
     }
     
-    useEffect(()=>{
-      moveRef.current?.scrollIntoView({ behavior: "smooth" });
-    },[moves])
+
 
     useEffect(()=>{
       if (!socket) {console.log('no socket');return} ;
@@ -93,7 +93,7 @@ const Game = () => {
 
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {message, color, gameId, opponentPlayerName, myPlayerName}= parsedData;
+        const {message, color, gameId, opponentPlayerName, myPlayerName,playerRole}= parsedData;
         if (message=='Connected'){
 
           const chessObject = new Chess()
@@ -105,6 +105,7 @@ const Game = () => {
           }
           setBoard(newBoard)
           setPlayersDetails({opponentPlayerName:opponentPlayerName?.toUpperCase(),myPlayerName:myPlayerName?.toUpperCase()})
+          setPlayerRole(playerRole)
           navigate(`/game/${gameId}`)
         }
       })
@@ -148,6 +149,7 @@ const Game = () => {
             reverseBoard(newBoard)
           }
           setBoard(newBoard)
+          console.log('spectator received these movessss')
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
       })
 
@@ -245,24 +247,10 @@ const Game = () => {
              <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
             </div>:
             <div>
-             {!result && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
-            
-              <h1 className="text-white text-3xl text-center">Moves Made</h1>
-              <div className="flex justify-evenly text-white pt-10 pb-2">
-                <h1>WHITE</h1>
-                <h1>BLACK</h1>
-              </div>
-              <div className="h-[50vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-y-3 text-center">
-                  {moves.map((move, index) => (
-                    <div className="bg-black text-white p-1" key={index}>
-                      <div>{move}</div>
-                    </div>
-                  ))}
-                  <div ref={moveRef}/>
-                </div>
-              </div>
-              </div>
+             {!result && playerRole==PlayerRolesEnum.PLAYER && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+
+              <MovesView moves={moves}/>
+            </div>
               }
         
         </div>
