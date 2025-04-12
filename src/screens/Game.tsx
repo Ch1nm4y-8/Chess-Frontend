@@ -7,10 +7,11 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare, PlayerRolesEnum} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
 import Input from "../components/Input";
+import ChatView from "../components/ChatView";
 
 const Game = () => {
     interface gameResult {
@@ -18,10 +19,7 @@ const Game = () => {
       message:string;
     }
 
-    interface playersDetails{
-      myPlayerName: string;
-      opponentPlayerName: string;
-  }
+
 
     const socket = useSocket();
     const chessObj = useRef<Chess>(new Chess());
@@ -29,8 +27,10 @@ const Game = () => {
     const [moves, setMoves] = useState<string[]>([]);
     const [legalMoves , setLegalMoves] = useState<string[]>([]);
     const [result , setResult] = useState<string>('');
-    const [playersDetails, setPlayersDetails] = useState<playersDetails>({opponentPlayerName:'Opponent',myPlayerName:'Me'})
+    const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
     const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
+    const [messages, setMessages] = useState<MessagesType[]>([])
+    
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
     const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
     
@@ -177,6 +177,13 @@ const Game = () => {
             console.log('message recieved from server: '+data)
         })
 
+        socket.off("receive_chat").on('receive_chat',(chatMessageObject:string)=>{
+          const parsedChatMessageObject = JSON.parse(chatMessageObject);
+
+          setMessages(prev =>[...prev,parsedChatMessageObject])
+            
+        })
+
         socket.off("make_move").on('make_move',(move)=>{
           console.log('server sent something from make_move '+move)
           if (!chessObj) return;
@@ -243,20 +250,31 @@ const Game = () => {
       
       socket.emit('join_invite_game',JSON.stringify({'inviteGameId':inviteGameIdToJoin}))
     }
+
+    const sendChatHandler = (message:string) =>{
+      if (!socket) {console.log('no socket'); return}
+      
+      socket.emit('send_chat',JSON.stringify({userName:playersDetails.myPlayerName,message:message}))
+    }
     
     const quitGameHandler = ()=>{
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
       navigate('/')
     }
+
+
     
   
 
   return (
-    <div className="flex h-[100vh] bg-[#3C3C3C]">
-        <div className="w-2/3 flex justify-center items-center">
+    <div className="flex h-[100vh] justify-between items-center bg-[#3C3C3C] p-10">
+        <div className="w-1/6">
+          <MovesView moves={moves}/>
+        </div>
+        <div className="w-3/6 flex justify-center items-center">
             <ChessBoard dragHandler={dragHandler} playersDetails={playersDetails} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
         </div>
-        <div className="w-1/3 mx-15 pt-20">
+        <div className="w-2/8 pt-20">
               {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
 
             
@@ -281,7 +299,7 @@ const Game = () => {
             <div>
              {!result && playerRole==PlayerRolesEnum.PLAYER && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
 
-              <MovesView moves={moves}/>
+                <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
             </div>
               }
         

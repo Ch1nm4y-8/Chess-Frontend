@@ -17,7 +17,7 @@ const MovesView = ({moves}:MovesViewProps) => {
             <h1>WHITE</h1>
             <h1>BLACK</h1>
         </div>
-        <div className="h-[50vh] overflow-y-auto">
+        <div className="h-[75vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-y-3 text-center">
             {moves.map((move, index) => (
                 <div className="bg-black text-white p-1" key={index}>

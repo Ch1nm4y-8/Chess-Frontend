@@ -16,9 +16,21 @@ export enum PlayerRolesEnum{
     SPECTATOR = "SPECTATOR",
 }
 
+
 export type BoardSquare = {
     square: Square;
     type: PieceSymbol;
     color: Color;
   } | null;
+
+export interface MessagesType{
+    userName:string;
+    message:string;
+}
+
+
+export interface playersDetailsType{
+    myPlayerName: string;
+    opponentPlayerName: string;
+}
 
