@@ -5,7 +5,7 @@ import useSocket from "../hooks/useSocket";
 import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ColorEnum ,BoardSquare} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
@@ -34,6 +34,8 @@ const Game = () => {
     const colorRef = useRef('');
     const moveRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const {gameId} = useParams();
+  
 
     const reverseBoard = (board:BoardSquare[][]) =>{
       board.reverse().forEach(row => row.reverse());
@@ -77,12 +79,21 @@ const Game = () => {
       moveRef.current?.scrollIntoView({ behavior: "smooth" });
     },[moves])
 
+    useEffect(()=>{
+      if (!socket) {console.log('no socket');return} ;
+
+      if (gameId){
+        socket.emit('join_room',JSON.stringify({'gameId':gameId}))
+        console.log('emitting join_room thissssssssss is the gameId '+gameId)
+      } 
+    },[gameId,socket])
+
     useEffect(() => {
       if (!socket) return ;
 
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {message, color, roomId, opponentPlayerName, myPlayerName}= parsedData;
+        const {message, color, gameId, opponentPlayerName, myPlayerName}= parsedData;
         if (message=='Connected'){
 
           const chessObject = new Chess()
@@ -94,7 +105,7 @@ const Game = () => {
           }
           setBoard(newBoard)
           setPlayersDetails({opponentPlayerName:opponentPlayerName?.toUpperCase(),myPlayerName:myPlayerName?.toUpperCase()})
-          navigate(`/game/${roomId}`)
+          navigate(`/game/${gameId}`)
         }
       })
 
@@ -107,7 +118,27 @@ const Game = () => {
  
         const chessObject = new Chess(parsedData.board_status)
         const restoredOldMoves = parsedData.restoredOldMoves    
-        console.log(chessObject.ascii())
+        
+          chessObj.current=chessObject
+          const newBoard = chessObject.board()
+
+          colorRef.current=parsedData.color
+          if (parsedData.color==ColorEnum.BLACK){
+            reverseBoard(newBoard)
+          }
+          setBoard(newBoard)
+          setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
+      })
+
+      socket.off("spectate_game").on('spectate_game',(data)=>{
+        const parsedData = JSON.parse(data)
+        console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
+        console.log(parsedData.board_status)
+        console.log(typeof parsedData.board_status)
+
+ 
+        const chessObject = new Chess(parsedData.board_status)
+        const restoredOldMoves = parsedData.restoredOldMoves    
         
           chessObj.current=chessObject
           const newBoard = chessObject.board()
@@ -139,13 +170,11 @@ const Game = () => {
         socket.off("message").on('message',(data)=>{
 
             console.log('message recieved from server: '+data)
-            console.log(chessObj.current.ascii())
         })
 
         socket.off("make_move").on('make_move',(move)=>{
           console.log('server sent something from make_move '+move)
           if (!chessObj) return;
-          console.log(chessObj.current.ascii())
           try{
 
               const parsedMove = JSON.parse(move)

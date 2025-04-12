@@ -5,6 +5,7 @@ import Game from './screens/Game';
 import Auth from './screens/Auth';
 import ProtectedRoute from './screens/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
+import React from 'react';
 
 function App() {
 
@@ -18,7 +19,7 @@ function App() {
 
         <Route path="/" element={<ProtectedRoute/>}>
           <Route index element={<Home />} />
-          <Route path='game/:gameId' element={<Game />} />
+          <Route path='game/:gameId?' element={<Game />} />
         </Route>
 
       </Routes>
