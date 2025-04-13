@@ -14,14 +14,14 @@ interface Board {
 
 interface chessBoardProp{
     board:(Board|null)[][];
-    legalMoves: string[];
-    onClickSquare:(row:number,col:number)=>void;
-    selectedSquare:number[];
+    legalMoves?: string[];
+    onClickSquare?:(row:number,col:number)=>void;
+    selectedSquare?:number[];
     playersDetails:playersDetails;
-    dragHandler:(row1:number,col1:number,row2:number,col:number)=>void;
+    dragHandler?:(row1:number,col1:number,row2:number,col:number)=>void;
 }
 
-const ChessBoard = ({board , legalMoves, onClickSquare, selectedSquare,playersDetails,dragHandler}:chessBoardProp) => {
+const ChessBoard = ({board , legalMoves=[], onClickSquare=(()=>{}), selectedSquare=[],playersDetails,dragHandler=(()=>{})}:chessBoardProp) => {
     const dragFrom = useRef<number[] |null>(null);
 
     const handleDragStart = (row:number,col:number)=>{

@@ -4,26 +4,32 @@ import Home from './screens/Home'
 import Game from './screens/Game';
 import Auth from './screens/Auth';
 import ProtectedRoute from './screens/ProtectedRoute';
-import { ToastContainer } from 'react-toastify';
+import { UserProvider } from './contexts/userContext';
 import React from 'react';
+import GameHistory from './screens/GameHistory';
+import GameWithMoveHistory from './screens/GameWithMoveHistory';
+import UserFetcher from './screens/UserFetcher';
 
 function App() {
 
   return (
     <>
     <BrowserRouter>
+    <UserProvider>
       <Routes>
         <Route path="/" >
           <Route path='login' element={<Auth />} />
         </Route>
 
-        <Route path="/" element={<ProtectedRoute/>}>
+        <Route path="/" element={<UserFetcher><ProtectedRoute/></UserFetcher>}>
           <Route index element={<Home />} />
           <Route path='game/:gameId?' element={<Game />} />
+          <Route path='history/game' element={<GameHistory/>} />
+          <Route path='history/game/:gameId' element={<GameWithMoveHistory/>} />
         </Route>
 
       </Routes>
-      <ToastContainer />
+      </UserProvider>
     </BrowserRouter>
     </>
   )

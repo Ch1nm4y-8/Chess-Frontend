@@ -1,37 +1,11 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios';
-import { ME } from '../config/endpoints';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useUser } from '../contexts/userContext';
+import React from 'react';
 
 const ProtectedRoute = () => {
-    const [isAuth, setisAuth] = useState<boolean|null>(null);
-
-    useEffect(() => {
-
-        const isAuthenticated = async()=>{
-            try{
-                const result = await axios.get(ME,{withCredentials:true});
-                if (result.data.message.userName){
-                    setisAuth(true);
-                }
-                else{
-                    setisAuth(false)
-                }
-                
-            }
-            catch(err){
-                 setisAuth(false);
-            }
-        }
-        isAuthenticated();
-
-    }, [])
-
-    if (isAuth==null){
-        return <div>Loading..........</div>
-    }
-    
-  return isAuth? <Outlet/> : <Navigate to="/login" />
+    console.log('insideeeeeeeeeeeeee ProtectedRoute')
+    const { user } = useUser();
+  return user ? <Outlet /> : <Navigate to="/login" />;
 }
 
 export default ProtectedRoute

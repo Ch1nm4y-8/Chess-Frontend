@@ -32,5 +32,7 @@ export interface MessagesType{
 export interface playersDetailsType{
     myPlayerName: string;
     opponentPlayerName: string;
+    myColor?:ColorEnum
+    opponentColor?:ColorEnum;
 }
 
