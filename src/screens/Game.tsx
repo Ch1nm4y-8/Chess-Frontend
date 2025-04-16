@@ -20,7 +20,6 @@ const Game = () => {
     }
 
 
-
     const socket = useSocket();
     const chessObj = useRef<Chess>(new Chess());
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
@@ -36,6 +35,14 @@ const Game = () => {
     
     const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
     const colorRef = useRef('');
+
+    const [player1TimeConsumed , setPlayer1TimeConsumed] = useState<number>(0)
+    const [player2TimeConsumed , setPlayer2TimeConsumed] = useState<number>(0)
+    const lastTimeTickRef = useRef<number>(Date.now())
+    const timerRef = useRef<number>(0)
+    const [startTimer,setStartTimer] = useState(false);
+    const TotalGameTime = 600000
+    
     
     const fromMove = useRef<string|null>(null);
     const navigate = useNavigate();
@@ -48,9 +55,9 @@ const Game = () => {
     
 
     const makeMove = (from:string,to:string)=>{
-      if (!socket) return
+      if (!socket || playerRole!=PlayerRolesEnum.PLAYER) return
       console.log('sending   '+JSON.stringify({"from":from, "to":to}))
-      socket.emit('make_move',JSON.stringify({"from":from, "to":to}));
+      socket.emit('make_move',JSON.stringify({"from":from, "to":to,"player1TimeSpent":player1TimeConsumed, "player2TimeSpent":player2TimeConsumed}));
     }
 
     const dragHandler = (row1:number, col1:number, row2:number,col2:number )=>{
@@ -59,9 +66,16 @@ const Game = () => {
       makeMove(squareMappingFrom,squareMappingTo);
     }
 
+    function msToMinSec(ms:number) {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const milliseconds = Math.floor((ms % 60000) / 100000);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+    }
+
     const onClickSquareHandler = (row:number, col:number) =>{
-      if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED){
-        console.log('no socket or game is completed');
+      if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED || playerRole!=PlayerRolesEnum.PLAYER){
+        console.log('no socket or game is completed or you are a spectator');
         return
       }
       const squareClicked = squareMapping(row,col,colorRef.current);
@@ -79,8 +93,6 @@ const Game = () => {
         setLegalMoves([]);
       }
     }
-    
-
 
     useEffect(()=>{
       if (!socket) {console.log('no socket');return} ;
@@ -110,11 +122,13 @@ const Game = () => {
           setPlayersDetails({opponentPlayerName:opponentPlayerName?.toUpperCase(),myPlayerName:myPlayerName?.toUpperCase()})
           setPlayerRole(playerRole)
           navigate(`/game/${gameId}`)
+          setStartTimer(true)
         }
       })
 
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
-        const parsedData = JSON.parse(data)
+        const parsedData = JSON.parse(data) 
+        const {playerRole}=parsedData
         console.log('rejoiningggggggg '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -132,10 +146,17 @@ const Game = () => {
           }
           setBoard(newBoard)
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
+          setPlayer1TimeConsumed(parsedData.player1TimeSpent)
+          setPlayer2TimeConsumed(parsedData.player2TimeSpent)
+          console.log(parsedData.player1TimeSpent)
+          console.log(parsedData.player2TimeSpent)
+          setPlayerRole(playerRole)
+          setStartTimer(true)
       })
 
       socket.off("spectate_game").on('spectate_game',(data)=>{
         const parsedData = JSON.parse(data)
+        const {playerRole} = parsedData;
         console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -152,8 +173,11 @@ const Game = () => {
             reverseBoard(newBoard)
           }
           setBoard(newBoard)
-          console.log('spectator received these movessss')
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
+          setPlayer1TimeConsumed(parsedData.player1TimeSpent)
+          setPlayer2TimeConsumed(parsedData.player2TimeSpent)
+          setPlayerRole(playerRole)
+          setStartTimer(true)
       })
 
       socket.off("game_result").on('game_result',(result:string)=>{
@@ -167,7 +191,12 @@ const Game = () => {
           gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(`DRAW: ${parsedResult.message}`)
         }
+        else if(parsedResult.type=='TIMEUP'){
+          gameStatus.current = GameStatus.GAME_COMPLETED
+          setResult(parsedResult.message)
+        }
 
+        clearInterval(timerRef.current)
       })
 
 
@@ -208,6 +237,8 @@ const Game = () => {
               setMoves(prev => [...prev, parsedMove.to])
               console.log('setting moves ')
               console.log(chessObj.current.ascii())
+              setPlayer1TimeConsumed(parsedMove.player1TimeSpent)
+              setPlayer2TimeConsumed(parsedMove.player2TimeSpent)
           }
           catch(err){
             console.error("ERRROR CAUGHT : "+err)
@@ -261,8 +292,26 @@ const Game = () => {
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
       navigate('/')
     }
+    console.log()
+    useEffect(()=>{
+      if(startTimer){
+        lastTimeTickRef.current = Date.now()
 
+        timerRef.current = setInterval(()=>{
+          const now = Date.now()
+          const elapsed = now - lastTimeTickRef.current
+          if (chessObj.current.turn()=='w'){
+            setPlayer1TimeConsumed(prev => prev+elapsed)
+          }
+          else{
+            setPlayer2TimeConsumed(prev => prev+elapsed)
+          }
+          lastTimeTickRef.current=now 
+        },300)  // for blitz/bullet keep it around 100-200, for other maybe keep around 500, for normal chess then 1000
+      }
 
+      return (()=> {if(timerRef.current)clearInterval(timerRef.current)})
+    },[startTimer])
     
   
 
@@ -272,7 +321,16 @@ const Game = () => {
           <MovesView moves={moves}/>
         </div>
         <div className="w-3/6 flex justify-center items-center">
+            {/* <Timer color='white' timeConsumed={player1TimeConsumed} startTimer={startTimer}/>
+            <Timer color='black' timeConsumed={player1TimeConsumed} startTimer={startTimer}/> */}
+
+             <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: {msToMinSec(TotalGameTime - player1TimeConsumed)}</div>
+            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: {msToMinSec(TotalGameTime - player2TimeConsumed)}</div> 
+            {/* <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: { player1TimeConsumed}</div>
+            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: { player2TimeConsumed}</div> */}
+            
             <ChessBoard dragHandler={dragHandler} playersDetails={playersDetails} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
+
         </div>
         <div className="w-2/8 pt-20">
               {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
