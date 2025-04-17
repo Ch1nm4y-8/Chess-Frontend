@@ -7,7 +7,7 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
 import Input from "../components/Input";
@@ -29,6 +29,10 @@ const Game = () => {
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
     const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
     const [messages, setMessages] = useState<MessagesType[]>([])
+
+    const [showTypes,setShowTypes] = useState<boolean>(false)
+    const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["60|0"])
+    const [totalGameTime,setTotalGameTime] = useState<number>(Number(gameType.split('|')[0]) * 60 * 1000);
     
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
     const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
@@ -41,7 +45,6 @@ const Game = () => {
     const lastTimeTickRef = useRef<number>(Date.now())
     const timerRef = useRef<number>(0)
     const [startTimer,setStartTimer] = useState(false);
-    const TotalGameTime = 600000
     
     
     const fromMove = useRef<string|null>(null);
@@ -69,8 +72,8 @@ const Game = () => {
     function msToMinSec(ms:number) {
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
-      const milliseconds = Math.floor((ms % 60000) / 100000);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+      // const milliseconds = Math.floor((ms % 1000) / 10);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}}`;
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
@@ -108,7 +111,7 @@ const Game = () => {
 
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {message, color, gameId, opponentPlayerName, myPlayerName,playerRole}= parsedData;
+        const {message, color, gameId, opponentPlayerName, myPlayerName,playerRole,TotalGametime}= parsedData;
         if (message=='Connected'){
 
           const chessObject = new Chess()
@@ -123,12 +126,13 @@ const Game = () => {
           setPlayerRole(playerRole)
           navigate(`/game/${gameId}`)
           setStartTimer(true)
+          setTotalGameTime(TotalGametime)
         }
       })
 
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
         const parsedData = JSON.parse(data) 
-        const {playerRole}=parsedData
+        const {playerRole, TotalGametime}=parsedData
         console.log('rejoiningggggggg '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -152,11 +156,12 @@ const Game = () => {
           console.log(parsedData.player2TimeSpent)
           setPlayerRole(playerRole)
           setStartTimer(true)
+          setTotalGameTime(TotalGametime)
       })
 
       socket.off("spectate_game").on('spectate_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {playerRole} = parsedData;
+        const {playerRole,TotalGametime} = parsedData;
         console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -178,6 +183,7 @@ const Game = () => {
           setPlayer2TimeConsumed(parsedData.player2TimeSpent)
           setPlayerRole(playerRole)
           setStartTimer(true)
+          setTotalGameTime(TotalGametime)
       })
 
       socket.off("game_result").on('game_result',(result:string)=>{
@@ -262,7 +268,7 @@ const Game = () => {
     }, [socket])
 
     const joinGameHandler = ()=>{
-      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game','join_game');
+      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game',gameType);
     }
 
     const spectateGameHandler = ()=>{
@@ -273,7 +279,7 @@ const Game = () => {
     const createGameHandler = ()=>{
       if (!socket) {console.log('no socket'); return}
       
-      socket.emit('create_invite_game','create_invite_game')
+      socket.emit('create_invite_game',gameType)
     }
     
     const joinWithFriendsGameHandler = () =>{
@@ -324,8 +330,10 @@ const Game = () => {
             {/* <Timer color='white' timeConsumed={player1TimeConsumed} startTimer={startTimer}/>
             <Timer color='black' timeConsumed={player1TimeConsumed} startTimer={startTimer}/> */}
 
-             <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: {msToMinSec(TotalGameTime - player1TimeConsumed)}</div>
-            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: {msToMinSec(TotalGameTime - player2TimeConsumed)}</div> 
+            <div className="w-[11%] m-10">
+             <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: {msToMinSec(totalGameTime - player1TimeConsumed)}</div>
+            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: {msToMinSec(totalGameTime - player2TimeConsumed)}</div> 
+            </div>
             {/* <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: { player1TimeConsumed}</div>
             <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: { player2TimeConsumed}</div> */}
             
@@ -339,6 +347,30 @@ const Game = () => {
             {
               !colorRef.current?
             <div className="flex flex-col gap-10 justify-center">
+             <Button onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
+            {
+              showTypes &&
+              <div>
+                <div>
+                  <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="bg-green-100 p-1 m-5 text-black">1 min</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="bg-green-100 p-1 m-5 text-black">1|1</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="bg-green-100 p-1 m-5 text-black">2|1</button>
+                </div>
+                <div>
+                  <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="bg-green-100 p-1 m-5 text-black">3 min</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="bg-green-100 p-1 m-5 text-black">3|2</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="bg-green-100 p-1 m-5 text-black">5 min</button>
+                </div>
+                <div>
+                  <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="bg-green-100 p-1 m-5 text-black">10 min</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="bg-green-100 p-1 m-5 text-black">15|10</button>
+                  <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="bg-green-100 p-1 m-5 text-black">30 min</button>
+                </div>
+                <div>
+                  <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="bg-green-100 p-1 m-5 text-black">Classic 60 min</button>
+                </div>
+              </div>
+            }
              <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
              <Button onClick={()=>{createGameHandler()}}>CREATE GAME(Play With Friends)</Button>
 
