@@ -2,8 +2,10 @@ import { useState } from "react"
 import axios, { AxiosError } from "axios"
 import Button from "../components/Button"
 import Input from "../components/Input"
-import { SIGNUP ,LOGIN} from "../config/endpoints"
+import { SIGNUP ,LOGIN, SIGNIN_WITH_GOOGLE} from "../config/endpoints"
 import { useNavigate } from "react-router-dom"
+import OAuthButton from "../components/OAuthButton"
+import React from "react"
 
 
 const Auth = () => {
@@ -50,6 +52,11 @@ const Auth = () => {
         }
     }
 
+
+    const signInWithGoogleHandler = async()=>{
+       window.location.href = SIGNIN_WITH_GOOGLE
+    }
+
   return (
     <>
     <div className='absolute top-0 left-0 right-0 min-h-screen  py-3 bg-center bg-cover flex justify-center items-center ' style={{ backgroundImage: "url('/assets/bg.png')" }}>
@@ -65,8 +72,11 @@ const Auth = () => {
                 <h2 className="card-title justify-center text-3xl">Login Page</h2>
                         <Input type="text" value={email} label={'Email'} placeholder="Email" onChange={(e)=>setEmail(e.target.value)} />
                         <Input type="text" value={password} label="Password" placeholder="Password" onChange={(e)=>setPassword(e.target.value)}  />
-                <div className="flex justify-center">
+                <div className="m-auto">
                         <Button onClick={loginHandler}>Login</Button>
+                </div>
+                <div className="m-auto">
+                        <OAuthButton onClick={signInWithGoogleHandler} imagePath="/assets/google.png" >Sign In With Google</OAuthButton>
                 </div>
             </div>
         </div>     
@@ -93,6 +103,9 @@ const Auth = () => {
 
                     <div className="flex justify-center">
                         <Button onClick={signUpHandler}>Sign Up</Button>
+                    </div>
+                    <div className="m-auto">
+                        <OAuthButton onClick={signInWithGoogleHandler} imagePath="/assets/google.png" >Sign In With Google</OAuthButton>
                     </div>
                 </div>
             </div>

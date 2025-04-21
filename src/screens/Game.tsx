@@ -70,10 +70,11 @@ const Game = () => {
     }
 
     function msToMinSec(ms:number) {
+      console.log(totalGameTime)
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
       // const milliseconds = Math.floor((ms % 1000) / 10);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}}`;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
