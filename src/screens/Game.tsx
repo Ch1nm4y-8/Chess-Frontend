@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"; 
 import Button from "../components/Button";
 import ChessBoard from "../components/ChessBoard";
+import ChessBoardHeader from "../components/ChessBoardHeader";
 import useSocket from "../hooks/useSocket";
 import MovesView from "../components/MovesView";
 import { Chess } from "chess.js";
@@ -97,8 +98,8 @@ const Game = () => {
     function msToMinSec(ms:number) {
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
-      const milliseconds = Math.floor((ms % 1000) / 10);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+      const milliseconds = Math.floor((ms % 1000) / 100);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
@@ -137,6 +138,11 @@ const Game = () => {
 
       socket.on('state',(msg)=>{
         if (msg=='waiting') setJoinedGame(true);
+      })
+
+      socket.on('invalid',(msg)=>{
+        console.log('received invalid msg'+msg)
+        alert(msg);
       })
 
       socket.off("join_game").on('join_game',(data)=>{
@@ -390,29 +396,11 @@ const Game = () => {
                 {moves.length>0 && <MovesView moves={moves}/>}
               </div>
               <div className="w-3/6 flex justify-center items-center">
-                  <div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center my-2 gap-4">
-                        <img src="https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif" alt="" width={'50vw'}/>
-                        <h1 className="text-2xl ">{playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'}</h1>
-                    </div>
-                    <div>
-                        <div className="bg-white text-black text-3xl m-2 ">{msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))}</div>     
-                    </div>
-                </div>
-
+                <div>
+                  <ChessBoardHeader name={playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))}/>
                   <ChessBoard dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
-                  
-                  <div className="flex justify-between items-center">
-                  <div className="flex items-center my-2 gap-4">
-                      <img src="https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif" alt="" width={'50vw'}/>
-                      <h1 className="text-2xl">{playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'}</h1>
-                  </div>
-                  <div>
-                      <div className="bg-white text-black text-3xl m-2 ">{msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))}</div>     
-                  </div>
-                  </div>
-                  </div>
+                  <ChessBoardHeader name={playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))}/>
+                </div>
 
 
               </div>

@@ -8,13 +8,19 @@ import { GET_GAME_WITH_MOVE_HISTORY } from '../config/endpoints';
 import Button from '../components/Button';
 import { useUser } from '../contexts/userContext';
 import { playersDetailsType } from '../types/gameTypes';
+import MovesView from '../components/MovesView';
+import ChessBoardHeader from '../components/ChessBoardHeader';
+import { STATUS } from '../types/gameTypes';
 
 
 const GameWithMoveHistory = () => {
     const {gameId} = useParams();
     const chessObj = useRef<Chess>(new Chess());
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
-    const moves = useRef<{boardStatus:string}[]>([]);
+    const boardStates = useRef<{boardStatus:string,toMove:string,player1Time:number,player2Time:number}[]>([]);
+    const [movesList, setMovesList] = useState<string[]>([]);
+    const [playersTime, setPlayersTime] = useState({player1Time:'00:00',player2Time:'00:00'});
+    const [status, setStatus] = useState(STATUS.LOADING)
     
     const { user } = useUser();
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:user||'Me'})
@@ -22,22 +28,39 @@ const GameWithMoveHistory = () => {
 
     useEffect(()=>{
         const fetchGameDataWithMoves = async()=>{
-            const response = await axios.get(GET_GAME_WITH_MOVE_HISTORY+gameId,{withCredentials:true});
-            moves.current=response.data.movesData
-
-            console.log(response.data)
-            const amIPlayer1 = response.data.gameData.player1Id.userName === user;
-            const myPlayerName = amIPlayer1 ? response.data.gameData.player1Id.userName : response.data.gameData.player2Id.userName;
-            const opponentPlayerName = amIPlayer1 ? response.data.gameData.player2Id.userName : response.data.gameData.player1Id.userName;
-            const myColor = amIPlayer1 ? ColorEnum.WHITE : ColorEnum.BLACK;
-            const opponentColor = amIPlayer1 ? ColorEnum.BLACK : ColorEnum.WHITE;
-
-            setPlayersDetails({
-            myPlayerName,
-            opponentPlayerName,
-            myColor,
-            opponentColor
-            });
+            try{
+                const response = await axios.get(GET_GAME_WITH_MOVE_HISTORY+gameId,{withCredentials:true});
+                boardStates.current=response.data.movesData
+    
+                console.log(response.data)
+                const amIPlayer1 = response.data.gameData.player1Id.userName === user;
+                const myPlayerName = amIPlayer1 ? response.data.gameData.player1Id.userName : response.data.gameData.player2Id.userName;
+                const opponentPlayerName = amIPlayer1 ? response.data.gameData.player2Id.userName : response.data.gameData.player1Id.userName;
+                const myColor = amIPlayer1 ? ColorEnum.WHITE : ColorEnum.BLACK;
+                const opponentColor = amIPlayer1 ? ColorEnum.BLACK : ColorEnum.WHITE;
+    
+                setPlayersDetails({
+                    myPlayerName,
+                    opponentPlayerName,
+                    myColor,
+                    opponentColor
+                });
+    
+                const totalGameTime= Number(response.data.gameData?.gameType?.split('|')[0])*60 * 1000
+                const timeInMinSec = msToMinSec(totalGameTime)
+                setPlayersTime({player1Time:timeInMinSec,player2Time:timeInMinSec})
+                setStatus(STATUS.SUCCESS)
+            }
+            catch(err){
+                console.log(err)
+                // @ts-expect-error err
+                if (err?.response?.status === 404){
+                    setStatus(STATUS.NOT_FOUND)
+                }
+                else{
+                    setStatus(STATUS.ERROR)
+                }
+            }
 
         }
         fetchGameDataWithMoves();
@@ -48,29 +71,46 @@ const GameWithMoveHistory = () => {
         if (type=='prev'){
             if (currentMove.current<=0) return;
             currentMove.current-=1
+            setMovesList(prev =>prev.slice(0, -1))
         }
         else if (type=='next'){
-            if (currentMove.current>=moves.current.length-1) return;
+            if (currentMove.current>=boardStates.current.length-1) return;
             currentMove.current+=1
+            setMovesList(prev => [...prev,boardStates.current[currentMove.current].toMove])
         }
-       
-        console.log(`current Move number : ${currentMove.current}    ${JSON.stringify(moves.current[currentMove.current])}`)
-        chessObj.current.load(moves.current[currentMove.current].boardStatus)
+        
+        setPlayersTime({player1Time:msToMinSec(boardStates.current[currentMove.current].player1Time),player2Time:msToMinSec(boardStates.current[currentMove.current].player2Time)})
+        console.log(`current Move number : ${currentMove.current}    ${JSON.stringify(boardStates.current[currentMove.current])}`)
+        chessObj.current.load(boardStates.current[currentMove.current].boardStatus)
         setBoard(chessObj.current.board());
 
     }
 
-  return (
-    <div className='flex justify-evenly items-center'>
 
-        <div>
-            <ChessBoard board={board} playersDetails={playersDetails}/>
+    function msToMinSec(ms:number) {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        const milliseconds = Math.floor((ms % 1000) / 100);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
+    }
+
+    if(status == STATUS.LOADING) return <div>Loadingggggggg................</div>
+    if(status == STATUS.NOT_FOUND) return <div>NOT FOUNDDDDDDDDDDDDDdd</div>
+  return (
+    <div className='flex justify-evenly items-center bg-black h-[100vh]'>
+        <div className='w-1/4'>
+            <MovesView moves={movesList}></MovesView>
         </div>
 
         <div>
-            <Button onClick={()=>ButtonHandler('prev')}>left</Button>
-            <Button onClick={()=>ButtonHandler('next')}>right</Button>
-            
+            <ChessBoardHeader name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
+            <ChessBoard board={board}/>
+            <ChessBoardHeader name={playersDetails.myPlayerName} time={playersTime.player1Time} />
+        </div>
+
+        <div className='flex gap-5'>
+            <Button color='#0CB07B' onClick={()=>ButtonHandler('prev')}>Previous</Button>
+            <Button color='#0CB07B' onClick={()=>ButtonHandler('next')}>Next</Button>            
         </div>
     </div>
   )

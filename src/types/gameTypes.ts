@@ -50,3 +50,11 @@ export enum GameTypesEnum {
 }
 
 
+export enum STATUS {
+    LOADING= 'loading',
+    SUCCESS= 'success',
+    NOT_FOUND= 'not_found',
+    ERROR= 'error',
+};
+
+
