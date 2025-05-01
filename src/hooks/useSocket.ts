@@ -6,14 +6,17 @@ const useSocket = () => {
   const [socket , setSocket] = useState<Socket|null>(null);
 
   useEffect(() => {
-    const socketObj = io(BACKEND_WEBSOCKET_URL,{
-      withCredentials:true,
-    })
-    setSocket(socketObj)
-
-    socketObj.on("connect", () => {
-      console.log("Socket connected with ID:", socketObj.id);
-    });
+    let socketObj:Socket;
+    if(!socket){
+      socketObj = io(BACKEND_WEBSOCKET_URL,{
+        withCredentials:true,
+      })
+      setSocket(socketObj)
+  
+      socketObj.on("connect", () => {
+        console.log("Socket connected with ID:", socketObj.id);
+      });
+    }
 
     return ()=>{
       console.log('socket disconnected')

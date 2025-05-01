@@ -12,6 +12,7 @@ import { GameStatus } from "../types/gameTypes";
 import React from "react";
 import Input from "../components/Input";
 import ChatView from "../components/ChatView";
+import confetti from 'canvas-confetti';
 
 const Game = () => {
     interface gameResult {
@@ -19,7 +20,7 @@ const Game = () => {
       message:string;
     }
 
-
+    const [joinedGame, setJoinedGame] = useState(false);
     const socket = useSocket();
     const chessObj = useRef<Chess>(new Chess());
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
@@ -31,8 +32,11 @@ const Game = () => {
     const [messages, setMessages] = useState<MessagesType[]>([])
 
     const [showTypes,setShowTypes] = useState<boolean>(false)
-    const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["60|0"])
+    const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["1|0"])
     const [totalGameTime,setTotalGameTime] = useState<number>(Number(gameType.split('|')[0]) * 60 * 1000);
+    useEffect(()=>{
+      setTotalGameTime(Number(gameType.split('|')[0]) * 60 * 1000)
+    },[gameType])
     
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
     const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
@@ -55,26 +59,46 @@ const Game = () => {
     const reverseBoard = (board:BoardSquare[][]) =>{
       board.reverse().forEach(row => row.reverse());
     }
+
+    const triggerConfetti=()=> {
+      const end = Date.now() + 2 * 1000;
+      const confettiInterval = setInterval(()=>{
+        if (Date.now() > end) clearInterval(confettiInterval);
+        confetti({
+            angle: 60,
+            particleCount: 100,
+            spread: 70,
+            origin: {  x: 0, y: 0.5  } 
+        });
+        confetti({
+            angle: 120,
+            particleCount: 100,
+            spread: 70,
+            origin: {  x: 1, y: 0.5  }
+        });
+        },300)
+
+    }
+  
     
 
     const makeMove = (from:string,to:string)=>{
       if (!socket || playerRole!=PlayerRolesEnum.PLAYER) return
-      console.log('sending   '+JSON.stringify({"from":from, "to":to}))
       socket.emit('make_move',JSON.stringify({"from":from, "to":to,"player1TimeSpent":player1TimeConsumed, "player2TimeSpent":player2TimeConsumed}));
     }
 
     const dragHandler = (row1:number, col1:number, row2:number,col2:number )=>{
+      if(gameStatus.current == GameStatus.GAME_COMPLETED) return;
       const squareMappingFrom = squareMapping(row1,col1,colorRef.current);
       const squareMappingTo = squareMapping(row2,col2,colorRef.current);
       makeMove(squareMappingFrom,squareMappingTo);
     }
 
     function msToMinSec(ms:number) {
-      console.log(totalGameTime)
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
-      // const milliseconds = Math.floor((ms % 1000) / 10);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      const milliseconds = Math.floor((ms % 1000) / 10);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
@@ -110,6 +134,11 @@ const Game = () => {
     useEffect(() => {
       if (!socket) return ;
 
+
+      socket.on('state',(msg)=>{
+        if (msg=='waiting') setJoinedGame(true);
+      })
+
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
         const {message, color, gameId, opponentPlayerName, myPlayerName,playerRole,TotalGametime}= parsedData;
@@ -128,6 +157,11 @@ const Game = () => {
           navigate(`/game/${gameId}`)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
+
+
+
+          setJoinedGame(true)
+
         }
       })
 
@@ -158,6 +192,10 @@ const Game = () => {
           setPlayerRole(playerRole)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
+          
+          
+          
+          setJoinedGame(true);
       })
 
       socket.off("spectate_game").on('spectate_game',(data)=>{
@@ -185,6 +223,9 @@ const Game = () => {
           setPlayerRole(playerRole)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
+
+
+          setJoinedGame(true);
       })
 
       socket.off("game_result").on('game_result',(result:string)=>{
@@ -193,6 +234,8 @@ const Game = () => {
         if (parsedResult.type=='WIN'){
           gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(parsedResult.message);
+
+          triggerConfetti();
         }
         else if(parsedResult.type=='DRAW'){
           gameStatus.current = GameStatus.GAME_COMPLETED
@@ -201,6 +244,9 @@ const Game = () => {
         else if(parsedResult.type=='TIMEUP'){
           gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(parsedResult.message)
+
+          triggerConfetti();
+
         }
 
         clearInterval(timerRef.current)
@@ -221,7 +267,6 @@ const Game = () => {
         })
 
         socket.off("make_move").on('make_move',(move)=>{
-          console.log('server sent something from make_move '+move)
           if (!chessObj) return;
           try{
 
@@ -242,8 +287,6 @@ const Game = () => {
   
               setBoard(newBoard)
               setMoves(prev => [...prev, parsedMove.to])
-              console.log('setting moves ')
-              console.log(chessObj.current.ascii())
               setPlayer1TimeConsumed(parsedMove.player1TimeSpent)
               setPlayer2TimeConsumed(parsedMove.player2TimeSpent)
           }
@@ -266,26 +309,33 @@ const Game = () => {
             setLegalMoves(sanitizedLegalMoves);
         })
 
+        socket.on('redirect',(redirectToGameId)=>{
+          const parsedRedirectToGameId = JSON.parse(redirectToGameId);
+          navigate('/history/game/'+parsedRedirectToGameId.gameId)
+        })
+
     }, [socket])
 
     const joinGameHandler = ()=>{
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game',gameType);
+      setJoinedGame(true)
     }
 
     const spectateGameHandler = ()=>{
       if (!socket) {console.log('no socket'); return}
       navigate('/game/'+gameIdToSpectate)
+      setJoinedGame(true)
     }
     
     const createGameHandler = ()=>{
       if (!socket) {console.log('no socket'); return}
       
       socket.emit('create_invite_game',gameType)
+      setJoinedGame(true)
     }
     
     const joinWithFriendsGameHandler = () =>{
       if (!socket) {console.log('no socket'); return}
-      
       socket.emit('join_invite_game',JSON.stringify({'inviteGameId':inviteGameIdToJoin}))
     }
 
@@ -299,7 +349,6 @@ const Game = () => {
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
       navigate('/')
     }
-    console.log()
     useEffect(()=>{
       if(startTimer){
         lastTimeTickRef.current = Date.now()
@@ -308,12 +357,21 @@ const Game = () => {
           const now = Date.now()
           const elapsed = now - lastTimeTickRef.current
           if (chessObj.current.turn()=='w'){
-            setPlayer1TimeConsumed(prev => prev+elapsed)
+            setPlayer1TimeConsumed(prev => {
+              const updated = prev+elapsed
+              if (updated>=60000) {clearInterval(timerRef.current); return 60000;}
+              return updated;
+          })
           }
           else{
-            setPlayer2TimeConsumed(prev => prev+elapsed)
+            setPlayer2TimeConsumed(prev => {
+              const updated = prev+elapsed
+              if (updated>=60000) {clearInterval(timerRef.current); return 60000;}
+              return updated;
+          })
           }
           lastTimeTickRef.current=now 
+
         },300)  // for blitz/bullet keep it around 100-200, for other maybe keep around 500, for normal chess then 1000
       }
 
@@ -323,78 +381,121 @@ const Game = () => {
   
 
   return (
-    <div className="flex h-[100vh] justify-between items-center bg-[#3C3C3C] p-10">
-        <div className="w-1/6">
-          <MovesView moves={moves}/>
-        </div>
-        <div className="w-3/6 flex justify-center items-center">
-            {/* <Timer color='white' timeConsumed={player1TimeConsumed} startTimer={startTimer}/>
-            <Timer color='black' timeConsumed={player1TimeConsumed} startTimer={startTimer}/> */}
-
-            <div className="w-[11%] m-10">
-             <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: {msToMinSec(totalGameTime - player1TimeConsumed)}</div>
-            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: {msToMinSec(totalGameTime - player2TimeConsumed)}</div> 
-            </div>
-            {/* <div className="bg-white text-black text-3xl m-2 w-[100%]">Player White Time: { player1TimeConsumed}</div>
-            <div className="bg-black text-white text-3xl m-2 w-[100%]">Player Black Time: { player2TimeConsumed}</div> */}
-            
-            <ChessBoard dragHandler={dragHandler} playersDetails={playersDetails} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
-
-        </div>
-        <div className="w-2/8 pt-20">
-              {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
-
-            
-            {
-              !colorRef.current?
-            <div className="flex flex-col gap-10 justify-center">
-             <Button onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
-            {
-              showTypes &&
-              <div>
-                <div>
-                  <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="bg-green-100 p-1 m-5 text-black">1 min</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="bg-green-100 p-1 m-5 text-black">1|1</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="bg-green-100 p-1 m-5 text-black">2|1</button>
+    // <div className="bg-gradient-to-t from-black via-[#0e0e0e] to-[#171717] p-10">
+    <div className="bg-black">
+        {
+          (joinedGame||gameId)?
+            <div className="flex h-[100vh] justify-around items-center">
+              <div className="w-1/6">
+                {moves.length>0 && <MovesView moves={moves}/>}
+              </div>
+              <div className="w-3/6 flex justify-center items-center">
+                  <div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center my-2 gap-4">
+                        <img src="https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif" alt="" width={'50vw'}/>
+                        <h1 className="text-2xl ">{playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'}</h1>
+                    </div>
+                    <div>
+                        <div className="bg-white text-black text-3xl m-2 ">{msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))}</div>     
+                    </div>
                 </div>
-                <div>
-                  <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="bg-green-100 p-1 m-5 text-black">3 min</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="bg-green-100 p-1 m-5 text-black">3|2</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="bg-green-100 p-1 m-5 text-black">5 min</button>
+
+                  <ChessBoard dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
+                  
+                  <div className="flex justify-between items-center">
+                  <div className="flex items-center my-2 gap-4">
+                      <img src="https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif" alt="" width={'50vw'}/>
+                      <h1 className="text-2xl">{playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'}</h1>
+                  </div>
+                  <div>
+                      <div className="bg-white text-black text-3xl m-2 ">{msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))}</div>     
+                  </div>
+                  </div>
+                  </div>
+
+
+              </div>
+              <div className="w-2/9 pt-20">
+                    {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
+
+                  <div>
+                  {!result && playerRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+
+                      {
+                        colorRef.current?
+                        <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
+                        : 
+                        <div>
+                          <h1>Waiting for a player to connect....</h1>
+                        </div>
+                      }
+                      
+                  </div>
+              
+              </div>
+            </div> :
+
+          <div className="flex h-[100vh] justify-between items-center ">
+            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] mx-5">
+                <h1 className="text-center text-2xl">SELECT GAME TYPE</h1>
+                <Button color="#0CB07B" onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
+                            {
+                    showTypes &&
+                    <div>
+                      <div>
+                        <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3  w-[5vw] text-black">1 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">1|1</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">2|1</button>
+                      </div>
+                      <div>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">3 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">3|2</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">5 min</button>
+                      </div>
+                      <div>
+                        <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">10 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">15|10</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">30 min</button>
+                      </div>
+                      <div>
+                        <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[86%] text-black">Classic 60 min</button>
+                      </div>
+                    </div>
+                  }
+              </div>
+            <div>
+              <div className="flex gap-10">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1  className="text-center text-2xl">CREATE ROOM</h1>
+                  <Button color="#0BA0E2" onClick={()=>{createGameHandler()}}>Create Game (Play With Friends)</Button>
+                  <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
                 </div>
-                <div>
-                  <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="bg-green-100 p-1 m-5 text-black">10 min</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="bg-green-100 p-1 m-5 text-black">15|10</button>
-                  <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="bg-green-100 p-1 m-5 text-black">30 min</button>
-                </div>
-                <div>
-                  <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="bg-green-100 p-1 m-5 text-black">Classic 60 min</button>
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1 className="text-center text-2xl">PLAY ONLINE</h1>
+                  <Button color="#0BA0E2" onClick={()=>{joinGameHandler()}}>Play Online</Button> 
+                  <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
                 </div>
               </div>
-            }
-             <Button onClick={()=>{joinGameHandler()}}>JOIN GAME</Button>
-             <Button onClick={()=>{createGameHandler()}}>CREATE GAME(Play With Friends)</Button>
-
-             <div className="flex items-center">
-             <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
-             <Button onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
-             </div>
-
-             <div className="flex items-center">
-             <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
-             <Button onClick={()=>{spectateGameHandler()}}>SPECTATE GAME</Button>
-             </div>
-             
-             
-            </div>:
-            <div>
-             {!result && playerRole==PlayerRolesEnum.PLAYER && <Button onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
-
-                <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
+              <div className="flex gap-10 my-10">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1 className="text-center text-2xl">JOIN FRIENDS</h1>
+                  <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
+                  <Button color="#0BA0E2" onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
+                </div>
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1 className="text-center text-2xl">SPECTATE GAME</h1>
+                  <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
+                  <Button color="#0BA0E2" onClick={()=>{spectateGameHandler()}}>Spectate Game</Button>
+                </div>
+              </div>
             </div>
-              }
+          </div>
+
+        }
         
-        </div>
+          
+
     </div>
   )
 }

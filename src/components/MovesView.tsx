@@ -16,11 +16,11 @@ const MovesView = ({moves}:MovesViewProps) => {
         <div className="flex justify-evenly text-white pt-10 pb-2">
             <h1>WHITE</h1>
             <h1>BLACK</h1>
-        </div>
+        </div>    
         <div className="h-[75vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-y-3 text-center">
             {moves.map((move, index) => (
-                <div className="bg-black text-white p-1" key={index}>
+                <div className="bg-[#131313] border-y-1 border-y-[#666666] text-[#eeeeee] p-1" key={index}>
                 <div>{move}</div>
                 </div>
             ))}

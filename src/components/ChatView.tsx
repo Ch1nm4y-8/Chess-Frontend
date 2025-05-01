@@ -28,7 +28,7 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
     },[messages])
 
   return (
-    <div className='bg-blue-950 h-[60vh] w-[100%]'>
+    <div className='bg-[#111111] border-1 border-[#444444] rounded-t-sm h-[60vh] w-[100%]'>
       <h1 className='text-center text-3xl'>CHAT</h1>
 
         <div className='flex flex-col justify-between h-[100%]'>
@@ -37,7 +37,7 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
                 return (
                 <div key={index} className={`chat ${playerDetails.myPlayerName===messageObj.userName?'chat-end':'chat-start'}`}>
                     <div className="chat-header">{messageObj?.userName?messageObj.userName:'Obi-Wan Kenobi'}</div>
-                    <div className="chat-bubble chat-bubble-success">{messageObj.message}</div>
+                    <div className="chat-bubble chat-bubble-success break-words">{messageObj.message}</div>
                 </div>
                 )
             })}
@@ -45,8 +45,8 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
             </div>
 
 
-        <label  className="input border-none">
-            <input onKeyDown={handleKeyDown} type="text" value={messageToBeSent} className="grow border-none" placeholder="Enter Message" onChange={(e)=>setMessageToBeSent(e.target.value)}/>
+        <label  className="input">
+            <input onKeyDown={handleKeyDown} type="text" value={messageToBeSent} className="grow" placeholder="Enter Message" onChange={(e)=>setMessageToBeSent(e.target.value)}/>
             <i onClick={()=>{sendMessageHandler()}} className="ri-telegram-2-fill cursor-pointer"/>
         </label>
         </div>
