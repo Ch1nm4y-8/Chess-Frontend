@@ -34,6 +34,9 @@ export interface playersDetailsType{
     opponentPlayerName: string;
     myColor?:ColorEnum
     opponentColor?:ColorEnum;
+    myPlayerId?: string;
+    opponentPlayerId?: string;
+    myRole?:PlayerRolesEnum;
 }
 
 export enum GameTypesEnum {

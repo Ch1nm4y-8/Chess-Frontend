@@ -19,6 +19,7 @@ const Game = () => {
     interface gameResult {
       type:string;
       message:string;
+      winner:string;
     }
 
     const [joinedGame, setJoinedGame] = useState(false);
@@ -29,7 +30,7 @@ const Game = () => {
     const [legalMoves , setLegalMoves] = useState<string[]>([]);
     const [result , setResult] = useState<string>('');
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
-    const [playerRole , setPlayerRole] = useState<PlayerRolesEnum|null>(null)
+    const playersDetailsRef = useRef<playersDetailsType>(playersDetails);
     const [messages, setMessages] = useState<MessagesType[]>([])
 
     const [showTypes,setShowTypes] = useState<boolean>(false)
@@ -38,6 +39,10 @@ const Game = () => {
     useEffect(()=>{
       setTotalGameTime(Number(gameType.split('|')[0]) * 60 * 1000)
     },[gameType])
+
+    useEffect(()=>{
+      playersDetailsRef.current = playersDetails;
+    },[playersDetails])
     
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
     const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
@@ -84,7 +89,7 @@ const Game = () => {
     
 
     const makeMove = (from:string,to:string)=>{
-      if (!socket || playerRole!=PlayerRolesEnum.PLAYER) return
+      if (!socket || playersDetails.myRole!=PlayerRolesEnum.PLAYER) return
       socket.emit('make_move',JSON.stringify({"from":from, "to":to,"player1TimeSpent":player1TimeConsumed, "player2TimeSpent":player2TimeConsumed}));
     }
 
@@ -103,7 +108,7 @@ const Game = () => {
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
-      if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED || playerRole!=PlayerRolesEnum.PLAYER){
+      if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED || playersDetails?.myRole!=PlayerRolesEnum.PLAYER){
         console.log('no socket or game is completed or you are a spectator');
         return
       }
@@ -147,7 +152,7 @@ const Game = () => {
 
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {message, color, gameId, opponentPlayerName, myPlayerName,playerRole,TotalGametime}= parsedData;
+        const {message, color, gameId, opponentPlayerName, myPlayerName,opponentPlayerId,myPlayerId,playerRole,TotalGametime}= parsedData;
         if (message=='Connected'){
 
           const chessObject = new Chess()
@@ -158,8 +163,8 @@ const Game = () => {
             reverseBoard(newBoard)
           }
           setBoard(newBoard)
-          setPlayersDetails({opponentPlayerName:opponentPlayerName?.toUpperCase(),myPlayerName:myPlayerName?.toUpperCase()})
-          setPlayerRole(playerRole)
+          setPlayersDetails({opponentPlayerName:opponentPlayerName,myPlayerName:myPlayerName,myPlayerId:myPlayerId, opponentPlayerId:opponentPlayerId , myRole:playerRole})
+          //setPlayerRole(playerRole)
           navigate(`/game/${gameId}`)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
@@ -173,7 +178,7 @@ const Game = () => {
 
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
         const parsedData = JSON.parse(data) 
-        const {playerRole, TotalGametime}=parsedData
+        const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId}=parsedData
         console.log('rejoiningggggggg '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -195,18 +200,16 @@ const Game = () => {
           setPlayer2TimeConsumed(parsedData.player2TimeSpent)
           console.log(parsedData.player1TimeSpent)
           console.log(parsedData.player2TimeSpent)
-          setPlayerRole(playerRole)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
-          
-          
+          setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole})        
           
           setJoinedGame(true);
       })
 
       socket.off("spectate_game").on('spectate_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {playerRole,TotalGametime} = parsedData;
+        const {playerRole,TotalGametime , player1Name, player2Name} = parsedData;
         console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -226,7 +229,7 @@ const Game = () => {
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
           setPlayer1TimeConsumed(parsedData.player1TimeSpent)
           setPlayer2TimeConsumed(parsedData.player2TimeSpent)
-          setPlayerRole(playerRole)
+          setPlayersDetails({myPlayerName:player1Name,opponentPlayerName:player2Name,myRole:playerRole})
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
 
@@ -241,7 +244,7 @@ const Game = () => {
           gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(parsedResult.message);
 
-          triggerConfetti();
+          if(parsedResult.winner == playersDetailsRef.current.myPlayerId && playersDetailsRef.current?.myRole!=PlayerRolesEnum.SPECTATOR) triggerConfetti();
         }
         else if(parsedResult.type=='DRAW'){
           gameStatus.current = GameStatus.GAME_COMPLETED
@@ -251,7 +254,7 @@ const Game = () => {
           gameStatus.current = GameStatus.GAME_COMPLETED
           setResult(parsedResult.message)
 
-          triggerConfetti();
+          if(parsedResult.winner == playersDetailsRef.current.myPlayerId  && playersDetailsRef.current?.myRole!=PlayerRolesEnum.SPECTATOR) triggerConfetti();
 
         }
 
@@ -408,7 +411,7 @@ const Game = () => {
                     {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
 
                   <div>
-                  {!result && playerRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+                  {!result && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
 
                       {
                         colorRef.current?
