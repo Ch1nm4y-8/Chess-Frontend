@@ -45,6 +45,7 @@ const Game = () => {
     },[playersDetails])
     
     const [gameIdToSpectate, setGameIdToSpectate] = useState<string>('');
+    const [inviteGameIdToSend, setInviteGameIdToSend] = useState<string>('');
     const [inviteGameIdToJoin, setInviteGameIdToJoin] = useState<string>('');
     
     const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS)
@@ -143,6 +144,10 @@ const Game = () => {
 
       socket.on('state',(msg)=>{
         if (msg=='waiting') setJoinedGame(true);
+      })
+
+      socket.on('invite_code',(invite_code)=>{
+        setInviteGameIdToSend(invite_code);
       })
 
       socket.on('invalid',(msg)=>{
@@ -407,7 +412,9 @@ const Game = () => {
 
 
               </div>
-              <div className="w-2/9 pt-20">
+              <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
+                  {inviteGameIdToSend && !startTimer && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
+
                     {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
 
                   <div>
