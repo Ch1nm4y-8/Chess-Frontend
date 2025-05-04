@@ -53,7 +53,7 @@ const Game = () => {
 
     const [player1TimeConsumed , setPlayer1TimeConsumed] = useState<number>(0)
     const [player2TimeConsumed , setPlayer2TimeConsumed] = useState<number>(0)
-    const lastTimeTickRef = useRef<number>(Date.now())
+    const lastTimeTickRef = useRef<number>(Date.now());
     const timerRef = useRef<number>(0)
     const [startTimer,setStartTimer] = useState(false);
     
@@ -91,7 +91,7 @@ const Game = () => {
 
     const makeMove = (from:string,to:string)=>{
       if (!socket || playersDetails.myRole!=PlayerRolesEnum.PLAYER) return
-      socket.emit('make_move',JSON.stringify({"from":from, "to":to,"player1TimeSpent":player1TimeConsumed, "player2TimeSpent":player2TimeConsumed}));
+      socket.emit('make_move',JSON.stringify({"from":from, "to":to,"currentTimeStamp":Date.now()}));
     }
 
     const dragHandler = (row1:number, col1:number, row2:number,col2:number )=>{
@@ -105,7 +105,13 @@ const Game = () => {
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
       const milliseconds = Math.floor((ms % 1000) / 100);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
+      // return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
+      const showMillis = seconds < 20;
+      const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+      return showMillis
+        ? `${timeStr}:${milliseconds}`
+        : timeStr;
     }
 
     const onClickSquareHandler = (row:number, col:number) =>{
@@ -140,7 +146,6 @@ const Game = () => {
 
     useEffect(() => {
       if (!socket) return ;
-
 
       socket.on('state',(msg)=>{
         if (msg=='waiting') setJoinedGame(true);
@@ -294,6 +299,9 @@ const Game = () => {
                 console.log('frontend move validation error : '+err)
               }
 
+              setPlayer1TimeConsumed(parsedMove.player1TimeSpent)
+              setPlayer2TimeConsumed(parsedMove.player2TimeSpent)
+              lastTimeTickRef.current = Date.now();
               const newBoard = chessObj.current.board();
               if (colorRef.current == ColorEnum.BLACK) {
                 reverseBoard(newBoard)
@@ -301,8 +309,6 @@ const Game = () => {
   
               setBoard(newBoard)
               setMoves(prev => [...prev, parsedMove.to])
-              setPlayer1TimeConsumed(parsedMove.player1TimeSpent)
-              setPlayer2TimeConsumed(parsedMove.player2TimeSpent)
           }
           catch(err){
             console.error("ERRROR CAUGHT : "+err)
@@ -367,26 +373,35 @@ const Game = () => {
       if(startTimer){
         lastTimeTickRef.current = Date.now()
 
-        timerRef.current = setInterval(()=>{
-          const now = Date.now()
-          const elapsed = now - lastTimeTickRef.current
-          if (chessObj.current.turn()=='w'){
+        const tick = () => {
+          const now = Date.now();
+          const elapsed = now - lastTimeTickRef.current;
+    
+          if (chessObj.current.turn() == 'w') {
             setPlayer1TimeConsumed(prev => {
-              const updated = prev+elapsed
-              if (updated>=60000) {clearInterval(timerRef.current); return 60000;}
+              const updated = prev + elapsed;
+              if (updated >= 60000) {
+                clearInterval(timerRef.current);
+                return 60000;
+              }
               return updated;
-          })
-          }
-          else{
+            });
+          } else {
             setPlayer2TimeConsumed(prev => {
-              const updated = prev+elapsed
-              if (updated>=60000) {clearInterval(timerRef.current); return 60000;}
+              const updated = prev + elapsed;
+              if (updated >= 60000) {
+                clearInterval(timerRef.current);
+                return 60000;
+              }
               return updated;
-          })
+            });
           }
-          lastTimeTickRef.current=now 
-
-        },300)  // for blitz/bullet keep it around 100-200, for other maybe keep around 500, for normal chess then 1000
+    
+          lastTimeTickRef.current = now;
+        };
+    
+        tick();
+        timerRef.current = setInterval(tick, 100);
       }
 
       return (()=> {if(timerRef.current)clearInterval(timerRef.current)})
@@ -419,7 +434,6 @@ const Game = () => {
 
                   <div>
                   {!result && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
-
                       {
                         colorRef.current?
                         <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
