@@ -20,6 +20,8 @@ const Game = () => {
       type:string;
       message:string;
       winner:string;
+      player1TimeSpent?:number;
+      player2TimeSpent?:number;
     }
 
     const [joinedGame, setJoinedGame] = useState(false);
@@ -105,8 +107,8 @@ const Game = () => {
       const minutes = Math.floor(ms / 60000);
       const seconds = Math.floor((ms % 60000) / 1000);
       const milliseconds = Math.floor((ms % 1000) / 100);
-      // return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
-      const showMillis = seconds < 20;
+
+      const showMillis = seconds < 20 && minutes == 0;
       const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     
       return showMillis
@@ -266,6 +268,12 @@ const Game = () => {
 
           if(parsedResult.winner == playersDetailsRef.current.myPlayerId  && playersDetailsRef.current?.myRole!=PlayerRolesEnum.SPECTATOR) triggerConfetti();
 
+         
+          if(parsedResult.player1TimeSpent && parsedResult.player2TimeSpent){
+            setPlayer1TimeConsumed(parsedResult.player1TimeSpent)
+            setPlayer2TimeConsumed(parsedResult.player2TimeSpent)
+          }
+
         }
 
         clearInterval(timerRef.current)
@@ -380,18 +388,18 @@ const Game = () => {
           if (chessObj.current.turn() == 'w') {
             setPlayer1TimeConsumed(prev => {
               const updated = prev + elapsed;
-              if (updated >= 60000) {
+              if (updated >= totalGameTime) {
                 clearInterval(timerRef.current);
-                return 60000;
+                return totalGameTime;
               }
               return updated;
             });
           } else {
             setPlayer2TimeConsumed(prev => {
               const updated = prev + elapsed;
-              if (updated >= 60000) {
+              if (updated >= totalGameTime) {
                 clearInterval(timerRef.current);
-                return 60000;
+                return totalGameTime;
               }
               return updated;
             });
