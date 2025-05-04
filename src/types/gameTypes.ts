@@ -61,3 +61,14 @@ export enum STATUS {
 };
 
 
+export enum GameModeEnum{
+    ONLINE = 'ONLINE',
+    INVITE = 'INVITE'
+}
+
+export enum ResponseStatus{
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED'
+}
+
+

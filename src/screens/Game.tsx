@@ -8,7 +8,7 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum, GameModeEnum, ResponseStatus} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
 import Input from "../components/Input";
@@ -37,6 +37,7 @@ const Game = () => {
 
     const [showTypes,setShowTypes] = useState<boolean>(false)
     const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["1|0"])
+    const [gameMode, setGameMode] = useState<GameModeEnum>(GameModeEnum.ONLINE)
     const [totalGameTime,setTotalGameTime] = useState<number>(Number(gameType.split('|')[0]) * 60 * 1000);
     useEffect(()=>{
       setTotalGameTime(Number(gameType.split('|')[0]) * 60 * 1000)
@@ -155,6 +156,10 @@ const Game = () => {
 
       socket.on('invite_code',(invite_code)=>{
         setInviteGameIdToSend(invite_code);
+      })
+
+      socket.on('cancel_join_game',(status)=>{
+        if (status == ResponseStatus.SUCCESS) setJoinedGame(false);
       })
 
       socket.on('invalid',(msg)=>{
@@ -347,10 +352,25 @@ const Game = () => {
     const joinGameHandler = ()=>{
       if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('join_game',gameType);
       setJoinedGame(true)
+      setGameMode(GameModeEnum.ONLINE)
+    }
+
+    const cancelJoinGameHandler = ()=>{
+      if (socket) {
+      
+        socket.emit(
+          'cancel_join_game',
+          JSON.stringify({
+            gameMode,
+            gameType,
+            gameId: inviteGameIdToSend
+          })
+        );
+      }
     }
 
     const spectateGameHandler = ()=>{
-      if (!socket) {console.log('no socket'); return}
+      if (!socket || !gameIdToSpectate) return
       navigate('/game/'+gameIdToSpectate)
       setJoinedGame(true)
     }
@@ -360,11 +380,13 @@ const Game = () => {
       
       socket.emit('create_invite_game',gameType)
       setJoinedGame(true)
+      setGameMode(GameModeEnum.INVITE)
     }
     
     const joinWithFriendsGameHandler = () =>{
       if (!socket) {console.log('no socket'); return}
       socket.emit('join_invite_game',JSON.stringify({'inviteGameId':inviteGameIdToJoin}))
+      setGameMode(GameModeEnum.INVITE)
     }
 
     const sendChatHandler = (message:string) =>{
@@ -436,7 +458,7 @@ const Game = () => {
 
               </div>
               <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
-                  {inviteGameIdToSend && !startTimer && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
+                  {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
                     {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
 
@@ -448,6 +470,7 @@ const Game = () => {
                         : 
                         <div>
                           <h1>Waiting for a player to connect....</h1>
+                          <Button color='#0CB07B' onClick={cancelJoinGameHandler}>Cancel</Button>
                         </div>
                       }
                       
