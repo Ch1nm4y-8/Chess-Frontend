@@ -11,6 +11,11 @@ export enum GameStatus {
     DRAW = "DRAW"
 }
 
+export enum gameResultEnum {
+    WIN ='WIN',
+    DRAW='DRAW'
+}
+
 export enum PlayerRolesEnum{
     PLAYER = "PLAYER",
     SPECTATOR = "SPECTATOR",
@@ -69,6 +74,21 @@ export enum GameModeEnum{
 export enum ResponseStatus{
     SUCCESS = 'SUCCESS',
     FAILED = 'FAILED'
+}
+
+
+export enum gameResultReasonEnum {
+    CHECKMATE = 'CHECKMATE',
+    RESIGNATION = 'RESIGNATION',
+    TIMEOUT = 'TIMEOUT',
+    ABANDONED = 'ABANDONED',
+    STALEMATE = 'STALEMATE',
+    THREE_FOLD_REPETITION = 'THREE_FOLD_REPETITION',
+    DRAW = 'DRAW',
+    DRAW_AGREEMENT = 'DRAW_AGREEMENT',
+    DRAW_INSUFFICIENT_MATERIAL = 'DRAW_INSUFFICIENT_MATERIAL',
+    DRAW_REPETITION = 'DRAW_REPETITION',
+    DRAW_50_MOVE_RULE = 'DRAW_50_MOVE_RULE',
 }
 
 

@@ -8,7 +8,7 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum, GameModeEnum, ResponseStatus} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum, GameModeEnum, ResponseStatus, gameResultEnum, gameResultReasonEnum} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
 import React from "react";
 import Input from "../components/Input";
@@ -17,9 +17,10 @@ import confetti from 'canvas-confetti';
 
 const Game = () => {
     interface gameResult {
-      type:string;
+      gameResult:gameResultEnum;
       message:string;
       winner:string;
+      gameResultReason:gameResultReasonEnum
       player1TimeSpent?:number;
       player2TimeSpent?:number;
     }
@@ -257,28 +258,16 @@ const Game = () => {
       socket.off("game_result").on('game_result',(result:string)=>{
         const parsedResult:gameResult = JSON.parse(result);
 
-        if (parsedResult.type=='WIN'){
-          gameStatus.current = GameStatus.GAME_COMPLETED
-          setResult(parsedResult.message);
+        gameStatus.current = GameStatus.GAME_COMPLETED
+        setResult(parsedResult.message)
 
+
+        if (parsedResult.gameResult==gameResultEnum.WIN){
           if(parsedResult.winner == playersDetailsRef.current.myPlayerId && playersDetailsRef.current?.myRole!=PlayerRolesEnum.SPECTATOR) triggerConfetti();
-        }
-        else if(parsedResult.type=='DRAW'){
-          gameStatus.current = GameStatus.GAME_COMPLETED
-          setResult(`DRAW: ${parsedResult.message}`)
-        }
-        else if(parsedResult.type=='TIMEUP'){
-          gameStatus.current = GameStatus.GAME_COMPLETED
-          setResult(parsedResult.message)
-
-          if(parsedResult.winner == playersDetailsRef.current.myPlayerId  && playersDetailsRef.current?.myRole!=PlayerRolesEnum.SPECTATOR) triggerConfetti();
-
-         
-          if(parsedResult.player1TimeSpent && parsedResult.player2TimeSpent){
+          if(parsedResult.gameResultReason== gameResultReasonEnum.TIMEOUT && parsedResult.player1TimeSpent && parsedResult.player2TimeSpent){
             setPlayer1TimeConsumed(parsedResult.player1TimeSpent)
             setPlayer2TimeConsumed(parsedResult.player2TimeSpent)
           }
-
         }
 
         clearInterval(timerRef.current)
