@@ -31,7 +31,7 @@ const Game = () => {
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
     const [moves, setMoves] = useState<string[]>([]);
     const [legalMoves , setLegalMoves] = useState<string[]>([]);
-    const [result , setResult] = useState<string>('');
+    const [resultInfo , setResultInfo] = useState<{result:string,resultReason:gameResultReasonEnum}>();
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
     const playersDetailsRef = useRef<playersDetailsType>(playersDetails);
     const [messages, setMessages] = useState<MessagesType[]>([])
@@ -196,7 +196,7 @@ const Game = () => {
 
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
         const parsedData = JSON.parse(data) 
-        const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId}=parsedData
+        const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId ,restored_chat_messages}=parsedData
         console.log('rejoiningggggggg '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -221,7 +221,7 @@ const Game = () => {
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
           setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole})        
-          
+          setMessages(restored_chat_messages)
           setJoinedGame(true);
       })
 
@@ -259,7 +259,7 @@ const Game = () => {
         const parsedResult:gameResult = JSON.parse(result);
 
         gameStatus.current = GameStatus.GAME_COMPLETED
-        setResult(parsedResult.message)
+        setResultInfo({result:parsedResult.message,resultReason:parsedResult.gameResultReason})
 
 
         if (parsedResult.gameResult==gameResultEnum.WIN){
@@ -449,10 +449,11 @@ const Game = () => {
               <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
                   {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
-                    {result && <h1 className="text-white text-4xl text-center">{result}</h1>}
+                    {resultInfo?.result && <h1 className="text-white text-4xl text-center">{resultInfo.result+'  '+resultInfo.resultReason}</h1>}
 
+                  { playersDetails?.myRole!=PlayerRolesEnum.SPECTATOR &&
                   <div>
-                  {!result && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+                  {!resultInfo?.result && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
                       {
                         colorRef.current?
                         <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
@@ -461,9 +462,9 @@ const Game = () => {
                           <h1>Waiting for a player to connect....</h1>
                           <Button color='#0CB07B' onClick={cancelJoinGameHandler}>Cancel</Button>
                         </div>
-                      }
-                      
+                      }   
                   </div>
+                  }   
               
               </div>
             </div> :
