@@ -36,11 +36,15 @@ export interface MessagesType{
 
 export interface playersDetailsType{
     myPlayerName: string;
-    opponentPlayerName: string;
-    myColor?:ColorEnum
-    opponentColor?:ColorEnum;
+    myColor?:ColorEnum;
     myPlayerId?: string;
+    myPlayerPhotoURL?: string;
+    
+    opponentPlayerName: string;
+    opponentColor?:ColorEnum;
     opponentPlayerId?: string;
+    opponentPlayerPhotoURL?: string;
+    
     myRole?:PlayerRolesEnum;
 }
 

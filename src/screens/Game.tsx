@@ -170,7 +170,7 @@ const Game = () => {
 
       socket.off("join_game").on('join_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {message, color, gameId, opponentPlayerName, myPlayerName,opponentPlayerId,myPlayerId,playerRole,TotalGametime}= parsedData;
+        const {message, color, gameId, opponentPlayerName, myPlayerName,opponentPlayerId,myPlayerId,playerRole,TotalGametime , opponentPlayerPhotoURL , myPlayerPhotoURL}= parsedData;
         if (message=='Connected'){
 
           const chessObject = new Chess()
@@ -181,7 +181,7 @@ const Game = () => {
             reverseBoard(newBoard)
           }
           setBoard(newBoard)
-          setPlayersDetails({opponentPlayerName:opponentPlayerName,myPlayerName:myPlayerName,myPlayerId:myPlayerId, opponentPlayerId:opponentPlayerId , myRole:playerRole})
+          setPlayersDetails({opponentPlayerName:opponentPlayerName,myPlayerName:myPlayerName,myPlayerId:myPlayerId, opponentPlayerId:opponentPlayerId , myRole:playerRole, opponentPlayerPhotoURL , myPlayerPhotoURL })
           //setPlayerRole(playerRole)
           navigate(`/game/${gameId}`)
           setStartTimer(true)
@@ -196,14 +196,14 @@ const Game = () => {
 
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
         const parsedData = JSON.parse(data) 
-        const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId ,restored_chat_messages}=parsedData
+        const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId ,restored_chat_messages ,myPlayerPhotoURL ,opponentPlayerPhotoURL}=parsedData
         console.log('rejoiningggggggg '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
 
  
         const chessObject = new Chess(parsedData.board_status)
-        const restoredOldMoves = parsedData.restoredOldMoves    
+        const restoredOldMoves = parsedData.restoredOldMoves
         
           chessObj.current=chessObject
           const newBoard = chessObject.board()
@@ -220,14 +220,14 @@ const Game = () => {
           console.log(parsedData.player2TimeSpent)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
-          setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole})        
+          setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole, myPlayerPhotoURL,opponentPlayerPhotoURL})        
           setMessages(restored_chat_messages)
           setJoinedGame(true);
       })
 
       socket.off("spectate_game").on('spectate_game',(data)=>{
         const parsedData = JSON.parse(data)
-        const {playerRole,TotalGametime , player1Name, player2Name} = parsedData;
+        const {playerRole,TotalGametime , player1Name, player2Name, myPlayerPhotoURL ,opponentPlayerPhotoURL} = parsedData;
         console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
         console.log(parsedData.board_status)
         console.log(typeof parsedData.board_status)
@@ -247,7 +247,7 @@ const Game = () => {
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
           setPlayer1TimeConsumed(parsedData.player1TimeSpent)
           setPlayer2TimeConsumed(parsedData.player2TimeSpent)
-          setPlayersDetails({myPlayerName:player1Name,opponentPlayerName:player2Name,myRole:playerRole})
+          setPlayersDetails({myPlayerName:player1Name,opponentPlayerName:player2Name,myRole:playerRole ,myPlayerPhotoURL ,opponentPlayerPhotoURL})
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
 
@@ -439,9 +439,9 @@ const Game = () => {
               </div>
               <div className="w-3/6 flex justify-center items-center">
                 <div>
-                  <ChessBoardHeader name={playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))}/>
+                  <ChessBoardHeader name={playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))} imageURL={playersDetails?.opponentPlayerPhotoURL||''}/>
                   <ChessBoard dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
-                  <ChessBoardHeader name={playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))}/>
+                  <ChessBoardHeader name={playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))} imageURL={playersDetails?.myPlayerPhotoURL||''}/>
                 </div>
 
 
