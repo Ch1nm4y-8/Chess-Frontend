@@ -30,7 +30,7 @@ const Game = () => {
     const chessObj = useRef<Chess>(new Chess());
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
     const [moves, setMoves] = useState<string[]>([]);
-    const [legalMoves , setLegalMoves] = useState<string[]>([]);
+    const [legalMoves , setLegalMoves] = useState<number[][]>([]);
     const [resultInfo , setResultInfo] = useState<{result:string,resultReason:gameResultReasonEnum}>();
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
     const playersDetailsRef = useRef<playersDetailsType>(playersDetails);
@@ -96,6 +96,9 @@ const Game = () => {
     const makeMove = (from:string,to:string)=>{
       if (!socket || playersDetails.myRole!=PlayerRolesEnum.PLAYER) return
       socket.emit('make_move',JSON.stringify({"from":from, "to":to,"currentTimeStamp":Date.now()}));
+
+      if (legalMoves.length>0) setLegalMoves([]);
+      fromMove.current = null
     }
 
     const dragHandler = (row1:number, col1:number, row2:number,col2:number )=>{
@@ -128,11 +131,19 @@ const Game = () => {
 
       
       if (!fromMove.current){
-        socket.emit('get_moves',JSON.stringify({"square":squareClicked}))
+        const color= colorRef.current===ColorEnum.WHITE?'w':'b';
+        if (color!=chessObj.current.turn()) return
+
         fromMove.current = squareClicked
+        const possible_moves = chessObj.current.moves({square: squareClicked})
+
+        const sanitizedLegalMoves:number[][] = possible_moves.map((move: string) => {
+          const destinationSquare = getDestinationSquare(move);
+          return reverseSquareMapping(destinationSquare, colorRef.current);
+        });
+        setLegalMoves(sanitizedLegalMoves);
       }
       else{
-        //socket.emit('make_move',JSON.stringify({"from":fromMove.current, "to":squareClicked}));
         makeMove(fromMove.current,squareClicked)
         fromMove.current = null
         setLegalMoves([]);
@@ -317,20 +328,6 @@ const Game = () => {
           }
         })
 
-        socket.off("get_possible_moves").on('get_possible_moves',(legalMoves)=>{
-          const parsedLegalMoves = JSON.parse(legalMoves)
-
-
-          const sanitizedLegalMoves:string[] = parsedLegalMoves.map((move: string) => {
-            const destinationSquare = getDestinationSquare(move);
-            //console.log(reverseSquareMapping(destinationSquare, colorRef.current));
-            return reverseSquareMapping(destinationSquare, colorRef.current);
-          });
-          //console.log(sanitizedLegalMoves)
-
-            setLegalMoves(sanitizedLegalMoves);
-        })
-
         socket.on('redirect',(redirectToGameId)=>{
           const parsedRedirectToGameId = JSON.parse(redirectToGameId);
           navigate('/history/game/'+parsedRedirectToGameId.gameId)
@@ -440,7 +437,7 @@ const Game = () => {
               <div className="w-3/6 flex justify-center items-center">
                 <div>
                   <ChessBoardHeader name={playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))} imageURL={playersDetails?.opponentPlayerPhotoURL||''}/>
-                  <ChessBoard dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
+                  <ChessBoard chessObj={chessObj.current} dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
                   <ChessBoardHeader name={playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))} imageURL={playersDetails?.myPlayerPhotoURL||''}/>
                 </div>
 

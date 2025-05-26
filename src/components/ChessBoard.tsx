@@ -1,6 +1,8 @@
-import { Square,PieceSymbol, Color } from "chess.js";
+import { Square,PieceSymbol, Color, Chess } from "chess.js";
 import { useRef } from "react";
 import React from "react";
+import { squareMapping } from "../utils/squareMapping";
+import { ColorEnum } from "../types/gameTypes";
 
 interface Board {
     square: Square;
@@ -9,14 +11,15 @@ interface Board {
 }
 
 interface chessBoardProp{
+    chessObj:Chess
     board:(Board|null)[][];
-    legalMoves?: string[];
+    legalMoves?: number[][];
     onClickSquare?:(row:number,col:number)=>void;
-    selectedSquare?:number[];
+    selectedSquare?:number[]|null;
     dragHandler?:(row1:number,col1:number,row2:number,col:number)=>void;
 }
 
-const ChessBoard = ({board , legalMoves=[], onClickSquare=(()=>{}), selectedSquare=[],dragHandler=(()=>{})}:chessBoardProp) => {
+const ChessBoard = ({chessObj, board , legalMoves=[], onClickSquare=(()=>{}), selectedSquare=[],dragHandler=(()=>{})}:chessBoardProp) => {
     const dragFrom = useRef<number[] |null>(null);
 
     const handleDragStart = (row:number,col:number)=>{
@@ -41,7 +44,7 @@ const ChessBoard = ({board , legalMoves=[], onClickSquare=(()=>{}), selectedSqua
     <div>
 
       <div>
-            {
+            { 
                 board && board.map((row,rowIndex)=>{
                     return (
                         
@@ -49,18 +52,31 @@ const ChessBoard = ({board , legalMoves=[], onClickSquare=(()=>{}), selectedSqua
                             {row.map((square,colIndex)=>{
                                 //const isSelected = selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex;
                                 const isLegalMove = legalMoves.some(([r, c]) => Number(r) === rowIndex && Number(c) === colIndex);
+                                let doesPieceExist= false;
+                                if(isLegalMove){
+                                    doesPieceExist = chessObj?.get(squareMapping(rowIndex,colIndex,board[0][0]?.color=='w'?ColorEnum.BLACK:ColorEnum.WHITE))?true:false 
+                                }
+
                                 return (
                                     <div 
                                     onDrop={() => handleDrop(rowIndex, colIndex)}
                                     onDragOver={handleDragOver}
-                                    onClick={()=>onClickSquare(rowIndex,colIndex)} key={colIndex} className={`flex 
-                                        ${isLegalMove ? 'bg-blue-800 border-black border-2':((rowIndex + colIndex) % 2 === 0) ? 'bg-yellow-100' : 'bg-green-800'}  justify-center items-center w-17 h-17
-                                                                            
-                                        ${isLegalMove && 'bg-blue-800'}
-                                        `}>
+                                    onClick={()=>onClickSquare(rowIndex,colIndex)} key={colIndex}
+                                    className={`flex 
+                                        ${isLegalMove 
+                                            ? doesPieceExist 
+                                            ? 'bg-red-400' 
+                                            : 'bg-blue-400 border-black border-1' 
+                                            : (rowIndex + colIndex) % 2 === 0 
+                                            ? 'bg-yellow-100' 
+                                            : 'bg-green-800'
+                                        }  
+                                        justify-center items-center w-17 h-17
+                                        `}
+                                    >
                                     
                                     <div className=
-                                            {`select-none ${selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex ? "bg-red-500" : ""} `}>                                            {
+                                            {`select-none ${selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex ? "bg-purple-300" : ""} `}>                                            {
                                                 square?.type? <img 
                                                                 className="cursor-grab active:cursor-grabbing select-none" 
                                                                 draggable={true} 

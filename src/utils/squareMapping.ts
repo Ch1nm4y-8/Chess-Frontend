@@ -1,7 +1,8 @@
+import { Square } from "chess.js";
 import { ColorEnum } from "../types/gameTypes";
 
-export const squareMapping = (row:number,col:number,color:string) => {
-  return color==ColorEnum.WHITE?String.fromCharCode(97+col)+(8-row):String.fromCharCode(104-col)+(1+row)
+export const squareMapping = (row:number,col:number,color:string):Square => {
+  return color==ColorEnum.WHITE?String.fromCharCode(97+col)+(8-row) as Square:String.fromCharCode(104-col)+(1+row) as Square
 }
 
 export const reverseSquareMapping = (square:string|null, color:string) =>{
