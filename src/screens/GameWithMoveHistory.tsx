@@ -7,10 +7,11 @@ import axios from 'axios';
 import { GET_GAME_WITH_MOVE_HISTORY } from '../config/endpoints';
 import Button from '../components/Button';
 import { useUser } from '../contexts/userContext';
-import { playersDetailsType } from '../types/gameTypes';
+import { playersDetailsType ,resultInfoType} from '../types/gameTypes';
 import MovesView from '../components/MovesView';
 import ChessBoardHeader from '../components/ChessBoardHeader';
 import { STATUS } from '../types/gameTypes';
+import ResultModal from '../components/ResultModal';
 
 
 const GameWithMoveHistory = () => {
@@ -21,6 +22,7 @@ const GameWithMoveHistory = () => {
     const [movesList, setMovesList] = useState<string[]>([]);
     const [playersTime, setPlayersTime] = useState({player1Time:'00:00',player2Time:'00:00'});
     const [status, setStatus] = useState(STATUS.LOADING)
+    const [result, setResult] = useState<resultInfoType|null>(null);
     
     const { user } = useUser();
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:user||'Me'})
@@ -30,12 +32,15 @@ const GameWithMoveHistory = () => {
         const fetchGameDataWithMoves = async()=>{
             try{
                 const response = await axios.get(GET_GAME_WITH_MOVE_HISTORY+gameId,{withCredentials:true});
+                console.log('❌❌❌❌')
+                console.log(response.data)
                 boardStates.current=response.data.movesData
     
                 console.log(response.data)
-                const amIPlayer1 = response.data.gameData.player1Id.userName === user;
-                const myPlayerName = amIPlayer1 ? response.data.gameData.player1Id.userName : response.data.gameData.player2Id.userName;
-                const opponentPlayerName = amIPlayer1 ? response.data.gameData.player2Id.userName : response.data.gameData.player1Id.userName;
+                const {player1Id, player2Id, winner, gameResultReason, gameType, gameResult} = response.data.gameData;
+                const amIPlayer1 = player1Id.userName === user;
+                const myPlayerName = amIPlayer1 ? player1Id.userName : player2Id.userName;
+                const opponentPlayerName = amIPlayer1 ? player2Id.userName : player1Id.userName;
                 const myColor = amIPlayer1 ? ColorEnum.WHITE : ColorEnum.BLACK;
                 const opponentColor = amIPlayer1 ? ColorEnum.BLACK : ColorEnum.WHITE;
     
@@ -45,8 +50,13 @@ const GameWithMoveHistory = () => {
                     myColor,
                     opponentColor
                 });
+                setResult({
+                    winner:winner===player2Id._id?ColorEnum.BLACK:ColorEnum.WHITE,
+                    gameResultReason:gameResultReason,
+                    gameResult:gameResult
+                })
     
-                const totalGameTime= Number(response.data.gameData?.gameType?.split('|')[0])*60 * 1000
+                const totalGameTime= Number(gameType?.split('|')[0])*60 * 1000
                 const timeInMinSec = msToMinSec(totalGameTime)
                 setPlayersTime({player1Time:timeInMinSec,player2Time:timeInMinSec})
                 setStatus(STATUS.SUCCESS)
@@ -74,7 +84,13 @@ const GameWithMoveHistory = () => {
             setMovesList(prev =>prev.slice(0, -1))
         }
         else if (type=='next'){
-            if (currentMove.current>=boardStates.current.length-1) return;
+            if (currentMove.current>=boardStates.current.length-1) {
+                const dialog = document.getElementById('result_modal');
+                if (dialog instanceof HTMLDialogElement) {
+                    dialog.showModal();
+                }
+                return;
+            }
             currentMove.current+=1
             setMovesList(prev => [...prev,boardStates.current[currentMove.current].toMove])
         }
@@ -85,7 +101,6 @@ const GameWithMoveHistory = () => {
         setBoard(chessObj.current.board());
 
     }
-
 
     function msToMinSec(ms:number) {
         const minutes = Math.floor(ms / 60000);
@@ -103,15 +118,18 @@ const GameWithMoveHistory = () => {
         </div>
 
         <div>
-            <ChessBoardHeader name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
-            <ChessBoard board={board}/>
-            <ChessBoardHeader name={playersDetails.myPlayerName} time={playersTime.player1Time} />
+            <ChessBoardHeader imageURL='' name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
+            <ChessBoard chessObj={chessObj.current} board={board}/>
+            <ChessBoardHeader imageURL='' name={playersDetails.myPlayerName} time={playersTime.player1Time} />
         </div>
 
         <div className='flex gap-5'>
             <Button color='#0CB07B' onClick={()=>ButtonHandler('prev')}>Previous</Button>
             <Button color='#0CB07B' onClick={()=>ButtonHandler('next')}>Next</Button>            
         </div>
+
+
+        <ResultModal result={result}/>
     </div>
   )
 }

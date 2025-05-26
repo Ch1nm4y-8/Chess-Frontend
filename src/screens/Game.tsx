@@ -8,8 +8,9 @@ import { Chess } from "chess.js";
 import {squareMapping , reverseSquareMapping} from "../utils/squareMapping";
 import { getDestinationSquare } from "../utils/getDestinationSquare";
 import { useNavigate, useParams } from "react-router-dom";
-import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum, GameModeEnum, ResponseStatus, gameResultEnum, gameResultReasonEnum} from "../types/gameTypes";
+import { ColorEnum ,BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameTypesEnum, GameModeEnum, ResponseStatus, gameResultEnum, gameResultReasonEnum,resultInfoType} from "../types/gameTypes";
 import { GameStatus } from "../types/gameTypes";
+import ResultModal from "../components/ResultModal";
 import React from "react";
 import Input from "../components/Input";
 import ChatView from "../components/ChatView";
@@ -31,7 +32,7 @@ const Game = () => {
     const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
     const [moves, setMoves] = useState<string[]>([]);
     const [legalMoves , setLegalMoves] = useState<number[][]>([]);
-    const [resultInfo , setResultInfo] = useState<{result:string,resultReason:gameResultReasonEnum}>();
+    const [resultInfo , setResultInfo] = useState<resultInfoType|null>(null);
     const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({opponentPlayerName:'Opponent',myPlayerName:''})
     const playersDetailsRef = useRef<playersDetailsType>(playersDetails);
     const [messages, setMessages] = useState<MessagesType[]>([])
@@ -269,8 +270,13 @@ const Game = () => {
       socket.off("game_result").on('game_result',(result:string)=>{
         const parsedResult:gameResult = JSON.parse(result);
 
+        let winner='';
+        if(parsedResult.winner){
+          winner = parsedResult.message;
+        }
+
         gameStatus.current = GameStatus.GAME_COMPLETED
-        setResultInfo({result:parsedResult.message,resultReason:parsedResult.gameResultReason})
+        setResultInfo({gameResult:parsedResult.message,gameResultReason:parsedResult.gameResultReason,winner})
 
 
         if (parsedResult.gameResult==gameResultEnum.WIN){
@@ -282,6 +288,11 @@ const Game = () => {
         }
 
         clearInterval(timerRef.current)
+
+        const dialog = document.getElementById('result_modal');
+        if (dialog instanceof HTMLDialogElement) {
+            dialog.showModal();
+        }
       })
 
 
@@ -446,11 +457,11 @@ const Game = () => {
               <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
                   {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
-                    {resultInfo?.result && <h1 className="text-white text-4xl text-center">{resultInfo.result+'  '+resultInfo.resultReason}</h1>}
+                    {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult+'  '+resultInfo.gameResultReason}</h1>}
 
                   { playersDetails?.myRole!=PlayerRolesEnum.SPECTATOR &&
                   <div>
-                  {!resultInfo?.result && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
                       {
                         colorRef.current?
                         <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
@@ -525,7 +536,7 @@ const Game = () => {
         }
         
           
-
+        <ResultModal result={resultInfo}/>
     </div>
   )
 }

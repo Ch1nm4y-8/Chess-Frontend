@@ -96,3 +96,12 @@ export enum gameResultReasonEnum {
 }
 
 
+
+export interface resultInfoType{
+    gameResult:string;
+    winner:string;
+    gameResultReason:string
+}
+
+
+
