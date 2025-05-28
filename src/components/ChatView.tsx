@@ -33,13 +33,19 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
 
         <div className='flex flex-col justify-between h-[100%]'>
             <div className='h-[90%] overflow-y-auto'>
-            {messages.map((messageObj,index)=>{
-                return (
-                <div key={index} className={`chat ${playerDetails.myPlayerName===messageObj.userName?'chat-end':'chat-start'}`}>
-                    <div className="chat-header">{messageObj?.userName?messageObj.userName:'Obi-Wan Kenobi'}</div>
-                    <div className="chat-bubble chat-bubble-success break-words">{messageObj.message}</div>
-                </div>
-                )
+            {messages.map((messageObj, index) => {
+                if (messageObj?.type=='info') {
+                    return (
+                        <div key={index} className="bg-gray-800 mt-2 mb-1">{'>>> ' + messageObj.message}</div>
+                    );
+                } else {
+                    return (
+                        <div key={index} className={`chat ${playerDetails.myPlayerName === messageObj.userName ? 'chat-end' : 'chat-start'}`}>
+                            <div className="chat-header">{messageObj?.userName || 'Obi-Wan Kenobi'}</div>
+                            <div className="chat-bubble chat-bubble-success break-words">{messageObj.message}</div>
+                        </div>
+                    );
+                }
             })}
             <div ref={chatRef}></div> 
             </div>

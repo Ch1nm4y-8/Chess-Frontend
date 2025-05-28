@@ -15,6 +15,9 @@ import React from "react";
 import Input from "../components/Input";
 import ChatView from "../components/ChatView";
 import confetti from 'canvas-confetti';
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../config/constants";
+import Modal from '../components/Modal'
+import { handleOpenOrCloseModal } from "../utils/handleOpenOrCloseModal";
 
 const Game = () => {
     interface gameResult {
@@ -38,7 +41,7 @@ const Game = () => {
     const [messages, setMessages] = useState<MessagesType[]>([])
 
     const [showTypes,setShowTypes] = useState<boolean>(false)
-    const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["1|0"])
+    const [gameType, setGameType] = useState<GameTypesEnum>(GameTypesEnum["60|0"])
     const [gameMode, setGameMode] = useState<GameModeEnum>(GameModeEnum.ONLINE)
     const [totalGameTime,setTotalGameTime] = useState<number>(Number(gameType.split('|')[0]) * 60 * 1000);
     useEffect(()=>{
@@ -175,6 +178,14 @@ const Game = () => {
         if (status == ResponseStatus.SUCCESS) setJoinedGame(false);
       })
 
+      socket.on('offer_draw:request_to_opponent',()=>{
+        handleOpenOrCloseModal('draw_offer_modal',true)
+        // const dialog = document.getElementById('draw_offer_modal');
+        // if (dialog instanceof HTMLDialogElement) {
+        //     dialog.showModal();
+        // }
+      })
+
       socket.on('invalid',(msg)=>{
         console.log('received invalid msg'+msg)
         alert(msg);
@@ -232,7 +243,9 @@ const Game = () => {
           console.log(parsedData.player2TimeSpent)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
-          setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole, myPlayerPhotoURL,opponentPlayerPhotoURL})        
+          setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole, myPlayerPhotoURL,opponentPlayerPhotoURL})  
+          
+          console.log(restored_chat_messages)
           setMessages(restored_chat_messages)
           setJoinedGame(true);
       })
@@ -276,7 +289,7 @@ const Game = () => {
         }
 
         gameStatus.current = GameStatus.GAME_COMPLETED
-        setResultInfo({gameResult:parsedResult.message,gameResultReason:parsedResult.gameResultReason,winner})
+        setResultInfo({gameResult:parsedResult.gameResult,gameResultReason:parsedResult.gameResultReason,winner})
 
 
         if (parsedResult.gameResult==gameResultEnum.WIN){
@@ -289,10 +302,11 @@ const Game = () => {
 
         clearInterval(timerRef.current)
 
-        const dialog = document.getElementById('result_modal');
-        if (dialog instanceof HTMLDialogElement) {
-            dialog.showModal();
-        }
+        // const dialog = document.getElementById('result_modal');
+        // if (dialog instanceof HTMLDialogElement) {
+        //     dialog.showModal();
+        // }
+        handleOpenOrCloseModal('result_modal',true)
       })
 
 
@@ -392,10 +406,30 @@ const Game = () => {
       socket.emit('send_chat',JSON.stringify({userName:playersDetails.myPlayerName,message:message}))
     }
     
-    const quitGameHandler = ()=>{
-      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('quit_game','quit_game');
-      navigate('/')
+    const abortGameHandler = (response:boolean)=>{
+      // navigate('/')
+      if (!socket) {console.log('no socket'); return}
+
+      if(response){
+        if(gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('abort_game','abort_game');
+      }
+
+      handleOpenOrCloseModal('abort_game_modal',false)
     }
+    
+    const offerDrawHandler = ()=>{
+      if(socket && gameStatus.current!=GameStatus.GAME_COMPLETED) socket.emit('offer_draw:request_from_client','offer_draw:request_from_client');
+      // navigate('/')
+    }
+
+    const offerDrawClickHandler = (response:boolean)=>{
+      if (!socket) {console.log('no socket'); return}
+
+      socket.emit('offer_draw:response_from_opponent',response)
+
+      handleOpenOrCloseModal('draw_offer_modal',false)
+    }
+
     useEffect(()=>{
       if(startTimer){
         lastTimeTickRef.current = Date.now()
@@ -455,13 +489,14 @@ const Game = () => {
 
               </div>
               <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
-                  {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className=" bg-[#131313] border border-[#0BA0E2] hover:border-[#0CB07B] cursor-pointer m-5 p-5 place-self-center text-sm"><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
+                  {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className={`bg-[#131313] border border-${PRIMARY_COLOR} hover:border-${SECONDARY_COLOR} cursor-pointer m-5 p-5 place-self-center text-sm`}><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
                     {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult+'  '+resultInfo.gameResultReason}</h1>}
 
                   { playersDetails?.myRole!=PlayerRolesEnum.SPECTATOR &&
                   <div>
-                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color='black' onClick={()=>{quitGameHandler()}}>QUIT GAME</Button>}
+                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{handleOpenOrCloseModal('abort_game_modal',true)}}>ABORT GAME</Button>}
+                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{offerDrawHandler()}}>OFFER DRAW</Button>}
                       {
                         colorRef.current?
                         <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
@@ -534,8 +569,30 @@ const Game = () => {
           </div>
 
         }
+
         
-          
+
+
+        {/* Make sure this modal renders only when required */}
+        <Modal modalName="abort_game_modal">
+          <div>
+            <h1 className="text-3xl pb-4">Are you sure you want to abort</h1>
+            <div className="flex justify-around">
+              <Button color="#0BA0E2" onClick={()=>{abortGameHandler(true)}}>Yes</Button>
+              <Button color="#0CB07B" onClick={()=>{abortGameHandler(false)}}>No</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal modalName="draw_offer_modal">
+          <div>
+            <h1 className="text-3xl pb-4">Opponent Offered Draw</h1>
+            <div className="flex justify-around">
+              <Button color="#0BA0E2" onClick={()=>{offerDrawClickHandler(true)}}>Accept</Button>
+              <Button color="#0CB07B" onClick={()=>{offerDrawClickHandler(false)}}>Reject</Button>
+            </div>
+          </div>
+        </Modal>
         <ResultModal result={resultInfo}/>
     </div>
   )

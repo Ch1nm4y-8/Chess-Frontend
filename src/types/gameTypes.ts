@@ -31,6 +31,7 @@ export type BoardSquare = {
 export interface MessagesType{
     userName:string;
     message:string;
+    type?:string;
 }
 
 
@@ -98,7 +99,7 @@ export enum gameResultReasonEnum {
 
 
 export interface resultInfoType{
-    gameResult:string;
+    gameResult:gameResultEnum;
     winner:string;
     gameResultReason:string
 }
