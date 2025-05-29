@@ -94,8 +94,6 @@ const Game = () => {
         },300)
 
     }
-  
-    
 
     const makeMove = (from:string,to:string)=>{
       if (!socket || playersDetails.myRole!=PlayerRolesEnum.PLAYER) return
@@ -353,9 +351,19 @@ const Game = () => {
           }
         })
 
-        socket.on('redirect',(redirectToGameId)=>{
+        socket.on('redirect:history',(redirectToGameId)=>{
           const parsedRedirectToGameId = JSON.parse(redirectToGameId);
           navigate('/history/game/'+parsedRedirectToGameId.gameId)
+        })
+
+        socket.on('redirect:game',(redirectToGameId)=>{
+          const parsedRedirectToGameId = JSON.parse(redirectToGameId);
+          navigate('/game/'+parsedRedirectToGameId.gameId)
+        })
+
+        socket.on('block_session',()=>{
+          if(timerRef.current)clearInterval(timerRef.current)
+          handleOpenOrCloseModal('block_session_modal',true)
         })
 
     }, [socket])
@@ -580,6 +588,16 @@ const Game = () => {
             <div className="flex justify-around">
               <Button color="#0BA0E2" onClick={()=>{abortGameHandler(true)}}>Yes</Button>
               <Button color="#0CB07B" onClick={()=>{abortGameHandler(false)}}>No</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal modalName="block_session_modal">
+          <div>
+            <h1 className="text-2xl pb-4">Looks like you’re active in another tab.</h1>
+            <h2 className="text-xl pb-4">You can continue playing there or click below to switch to this session.</h2>
+            <div className="flex justify-around">
+              <Button color="#0BA0E2" onClick={()=>{window.location.reload()}}>Play Here</Button>
             </div>
           </div>
         </Modal>

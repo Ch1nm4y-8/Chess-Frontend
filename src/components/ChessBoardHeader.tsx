@@ -12,7 +12,7 @@ const ChessBoardHeader = ({name,time,imageURL}:ChessBoardHeaderProp) => {
   return (
     <div className="flex justify-between items-center">
         <div className="flex items-center my-2 gap-4">
-            <img src={imageURL||defaultImage} alt="" width={'50vw'}/>
+            <img src={imageURL && imageURL.trim() !== "" ? imageURL : defaultImage} alt="" width={'50vw'}/>
             <h1 className="text-2xl ">{name.toUpperCase()}</h1>
         </div>
         <div>
