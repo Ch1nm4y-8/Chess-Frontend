@@ -13,6 +13,7 @@ import ChessBoardHeader from '../components/ChessBoardHeader';
 import { STATUS } from '../types/gameTypes';
 import ResultModal from '../components/ResultModal';
 import Error404 from './Error404';
+import ChessLoader from '../components/ChessLoader';
 
 
 const GameWithMoveHistory = () => {
@@ -110,7 +111,7 @@ const GameWithMoveHistory = () => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(0, '0')}`;
     }
 
-    if(status == STATUS.LOADING) return <div>Loadingggggggg................</div>
+    if(status == STATUS.LOADING) return <div className='w-[100vw] h-[100vh] flex justify-center items-center bg-black'><ChessLoader /></div>
     if(status == STATUS.NOT_FOUND) return <Error404/>
   return (
     <div className='flex justify-evenly items-center bg-black h-[100vh]'>

@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState,ReactNode } from 'react'
 import { useUser } from '../contexts/userContext';
 import { ME } from '../config/endpoints';
+import ChessLoader from '../components/ChessLoader';
 
 const UserFetcher = ({children}: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
@@ -34,7 +35,7 @@ const UserFetcher = ({children}: { children: ReactNode }) => {
   
 
 
-  if (loading) return <div>Loading........................</div>
+  if (loading) return <div className='w-[100vw] h-[100vh] flex justify-center items-center bg-black'><ChessLoader /></div>
 
   return children
 }
