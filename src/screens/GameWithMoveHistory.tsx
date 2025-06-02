@@ -12,6 +12,7 @@ import MovesView from '../components/MovesView';
 import ChessBoardHeader from '../components/ChessBoardHeader';
 import { STATUS } from '../types/gameTypes';
 import ResultModal from '../components/ResultModal';
+import Error404 from './Error404';
 
 
 const GameWithMoveHistory = () => {
@@ -110,7 +111,7 @@ const GameWithMoveHistory = () => {
     }
 
     if(status == STATUS.LOADING) return <div>Loadingggggggg................</div>
-    if(status == STATUS.NOT_FOUND) return <div>NOT FOUNDDDDDDDDDDDDDdd</div>
+    if(status == STATUS.NOT_FOUND) return <Error404/>
   return (
     <div className='flex justify-evenly items-center bg-black h-[100vh]'>
         <div className='w-1/4'>

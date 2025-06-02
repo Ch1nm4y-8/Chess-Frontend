@@ -9,6 +9,7 @@ import React from 'react';
 import GameHistory from './screens/GameHistory';
 import GameWithMoveHistory from './screens/GameWithMoveHistory';
 import UserFetcher from './screens/UserFetcher';
+import Error404 from './screens/Error404';
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
           <Route path='history/game/:gameId' element={<GameWithMoveHistory/>} />
         </Route>
 
+        <Route path="*" element={<Error404 />} />
       </Routes>
       </UserProvider>
     </BrowserRouter>

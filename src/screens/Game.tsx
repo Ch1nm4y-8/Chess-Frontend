@@ -18,6 +18,7 @@ import confetti from 'canvas-confetti';
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../config/constants";
 import Modal from '../components/Modal'
 import { handleOpenOrCloseModal } from "../utils/handleOpenOrCloseModal";
+import ChessLoader from "../components/ChessLoader";
 
 const Game = () => {
     interface gameResult {
@@ -481,6 +482,7 @@ const Game = () => {
   return (
     // <div className="bg-gradient-to-t from-black via-[#0e0e0e] to-[#171717] p-10">
     <div className="bg-black">
+
         {
           (joinedGame||gameId)?
             <div className="flex h-[100vh] justify-around items-center">
@@ -509,8 +511,9 @@ const Game = () => {
                         colorRef.current?
                         <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
                         : 
-                        <div>
-                          <h1>Waiting for a player to connect....</h1>
+                        <div className=" h-[80vh] flex flex-col justify-center">
+                          <ChessLoader/>
+                          <h1 className="text-2xl my-5">Waiting for a player to connect....</h1>
                           <Button color='#0CB07B' onClick={cancelJoinGameHandler}>Cancel</Button>
                         </div>
                       }   
@@ -521,6 +524,7 @@ const Game = () => {
             </div> :
 
           <div className="flex h-[100vh] justify-between items-center ">
+                  
             <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] mx-5">
                 <h1 className="text-center text-2xl">SELECT GAME TYPE</h1>
                 <Button color="#0CB07B" onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
