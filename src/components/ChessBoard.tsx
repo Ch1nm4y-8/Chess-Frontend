@@ -41,7 +41,7 @@ const ChessBoard = ({chessObj, board , legalMoves=[], onClickSquare=(()=>{}), se
 
   return (
     <>
-    <div>
+    <div className="w-[100%] ">
 
       <div>
             { 
@@ -71,7 +71,7 @@ const ChessBoard = ({chessObj, board , legalMoves=[], onClickSquare=(()=>{}), se
                                             ? 'bg-yellow-100' 
                                             : 'bg-green-800'
                                         }  
-                                        justify-center items-center w-17 h-17
+                                        justify-center items-center w-9 h-9 sm:w-14 sm:h-14 lg:w-17 lg:h-17
                                         `}
                                     >
                                     

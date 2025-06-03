@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState,ReactNode } from 'react'
 import { useUser } from '../contexts/userContext';
-import { ME } from '../config/endpoints';
+import { ME } from '../config';
 import ChessLoader from '../components/ChessLoader';
 
 const UserFetcher = ({children}: { children: ReactNode }) => {

@@ -1,0 +1,9 @@
+:root {
+  --p: white;
+  --b1: black;
+  --b2: black;
+  --bc: black;
+  --bs: black;
+  background-color: black !important;
+  color: white !important;
+}

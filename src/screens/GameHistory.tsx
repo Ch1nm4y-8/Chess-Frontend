@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
-import { GET_GAMES_HISTORY } from '../config/endpoints';
+import { GET_GAMES_HISTORY } from '../config';
 import { useNavigate } from 'react-router-dom';
 
 

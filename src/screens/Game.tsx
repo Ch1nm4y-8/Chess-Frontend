@@ -30,6 +30,7 @@ const Game = () => {
       player2TimeSpent?:number;
     }
 
+    const isMobile = window.innerWidth < 1090;
     const [joinedGame, setJoinedGame] = useState(false);
     const socket = useSocket();
     const chessObj = useRef<Chess>(new Chess());
@@ -481,97 +482,108 @@ const Game = () => {
 
   return (
     // <div className="bg-gradient-to-t from-black via-[#0e0e0e] to-[#171717] p-10">
-    <div className="bg-black">
+    <div>
 
         {
           (joinedGame||gameId)?
-            <div className="flex h-[100vh] justify-around items-center">
-              <div className="w-1/6">
+            <div className="flex flex-wrap h-[100vh] justify-around items-center lg:flex-row">
+              <div className="order-2 lg:order-1 w-[90%] md:w-1/3 lg:w-1/6 ">
                 {moves.length>0 && <MovesView moves={moves}/>}
               </div>
-              <div className="w-3/6 flex justify-center items-center">
-                <div>
+              <div className="order-1 pt-5 lg:order-2 w-full md:w-2/3 lg:w-3/6 flex flex-col justify-center items-center md:h-[100vh] ">
+                <div className="mt-20 md:mt-0">
                   <ChessBoardHeader name={playersDetails?.opponentPlayerName?playersDetails?.opponentPlayerName:'Opponent'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player2TimeConsumed:player1TimeConsumed))} imageURL={playersDetails?.opponentPlayerPhotoURL||''}/>
                   <ChessBoard chessObj={chessObj.current} dragHandler={dragHandler} legalMoves={legalMoves} selectedSquare={reverseSquareMapping(fromMove.current,colorRef.current)} board={board} onClickSquare={onClickSquareHandler}/>
                   <ChessBoardHeader name={playersDetails?.myPlayerName?playersDetails?.myPlayerName:'Me'} time={msToMinSec(totalGameTime - (colorRef.current===ColorEnum.WHITE?player1TimeConsumed:player2TimeConsumed))} imageURL={playersDetails?.myPlayerPhotoURL||''}/>
                 </div>
-
-
+                                    {
+                      isMobile && colorRef?.current &&
+                      <div className="flex m-auto gap-5 my-30 md:my-10">
+                        {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{handleOpenOrCloseModal('abort_game_modal',true)}}>ABORT GAME</Button>}
+                        {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{offerDrawHandler()}}>OFFER DRAW</Button>}
+                      </div>
+                    }
               </div>
-              <div className="w-2/8 pt-20 flex flex-col h-[100vh]">
+              <div className="order-3 w-[90%] lg:w-2/8 pt-20 flex flex-col h-[60vh] lg:h-[100vh]">
                   {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className={`bg-[#131313] border border-${PRIMARY_COLOR} hover:border-${SECONDARY_COLOR} cursor-pointer m-5 p-5 place-self-center text-sm`}><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
                     {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult+'  '+resultInfo.gameResultReason}</h1>}
 
                   { playersDetails?.myRole!=PlayerRolesEnum.SPECTATOR &&
-                  <div>
-                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{handleOpenOrCloseModal('abort_game_modal',true)}}>ABORT GAME</Button>}
-                  {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{offerDrawHandler()}}>OFFER DRAW</Button>}
-                      {
-                        colorRef.current?
-                        <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
-                        : 
-                        <div className=" h-[80vh] flex flex-col justify-center">
-                          <ChessLoader/>
-                          <h1 className="text-2xl my-5">Waiting for a player to connect....</h1>
-                          <Button color='#0CB07B' onClick={cancelJoinGameHandler}>Cancel</Button>
-                        </div>
-                      }   
+                  <div className="flex flex-col gap-3">
+
+                    {
+                      !isMobile && 
+                      <div className="flex m-auto gap-5">
+                        {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{handleOpenOrCloseModal('abort_game_modal',true)}}>ABORT GAME</Button>}
+                        {!resultInfo?.gameResult && playersDetails?.myRole==PlayerRolesEnum.PLAYER && <Button color={PRIMARY_COLOR} onClick={()=>{offerDrawHandler()}}>OFFER DRAW</Button>}
+                      </div>
+                    }
+                    {
+                      colorRef.current?
+                      <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails}/>
+                      : 
+                      <div className=" h-[80vh] flex flex-col">
+                        <ChessLoader/>
+                        <h1 className="text-2xl my-5">Waiting for a player to connect....</h1>
+                        <Button color='#0CB07B' onClick={cancelJoinGameHandler}>Cancel</Button>
+                      </div>
+                    }   
                   </div>
                   }   
               
               </div>
             </div> :
 
-          <div className="flex h-[100vh] justify-between items-center ">
+          <div className="flex flex-col lg:h-[100vh] justify-between items-center lg:flex-row gap-5 lg:gap-0">
                   
-            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] mx-5">
+            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] mx-5">
                 <h1 className="text-center text-2xl">SELECT GAME TYPE</h1>
                 <Button color="#0CB07B" onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
                             {
                     showTypes &&
-                    <div>
+                    <div className="flex flex-col items-center">
                       <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3  w-[5vw] text-black">1 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">1|1</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">2|1</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="cursor-pointer bg-[#0CB07B] w-[10vw] p-1 m-3 lg:w-[5vw] text-black">1 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">1|1</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">2|1</button>
                       </div>
                       <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">3 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">3|2</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">5 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">3 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">3|2</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">5 min</button>
                       </div>
                       <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">10 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">15|10</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[5vw] text-black">30 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">10 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">15|10</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">30 min</button>
                       </div>
                       <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[86%] text-black">Classic 60 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[100%] text-black">Classic 60 min</button>
                       </div>
                     </div>
                   }
               </div>
             <div>
-              <div className="flex gap-10">
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+              <div className="flex flex-col gap-10 lg:flex-row">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1  className="text-center text-2xl">CREATE ROOM</h1>
                   <Button color="#0BA0E2" onClick={()=>{createGameHandler()}}>Create Game (Play With Friends)</Button>
                   <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
                 </div>
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1 className="text-center text-2xl">PLAY ONLINE</h1>
                   <Button color="#0BA0E2" onClick={()=>{joinGameHandler()}}>Play Online</Button> 
                   <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
                 </div>
               </div>
-              <div className="flex gap-10 my-10">
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+              <div className="flex gap-10 my-10 flex-col lg:flex-row">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1 className="text-center text-2xl">JOIN FRIENDS</h1>
                   <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
                   <Button color="#0BA0E2" onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
                 </div>
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[30vw] hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1 className="text-center text-2xl">SPECTATE GAME</h1>
                   <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
                   <Button color="#0BA0E2" onClick={()=>{spectateGameHandler()}}>Spectate Game</Button>

@@ -28,8 +28,8 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
     },[messages])
 
   return (
-    <div className='bg-[#111111] border-1 border-[#444444] rounded-t-sm h-[60vh] w-[100%]'>
-      <h1 className='text-center text-3xl'>CHAT</h1>
+    <div className='bg-[#111111] border-1 border-[#444444] rounded-t-sm h-[50vh] lg:h-[60vh] w-[100%]'>
+      <h1 className='text-center text-3xl '>CHAT</h1>
 
         <div className='flex flex-col justify-between h-[100%]'>
             <div className='h-[90%] overflow-y-auto'>
@@ -51,8 +51,8 @@ const ChatView = ({sendChatHandler,messages,playerDetails}:ChatViewProps) => {
             </div>
 
 
-        <label  className="input">
-            <input onKeyDown={handleKeyDown} type="text" value={messageToBeSent} className="grow" placeholder="Enter Message" onChange={(e)=>setMessageToBeSent(e.target.value)}/>
+        <label className="input w-full">
+            <input onKeyDown={handleKeyDown} type="text" value={messageToBeSent} className="w-full" placeholder="Enter Message" onChange={(e)=>setMessageToBeSent(e.target.value)}/>
             <i onClick={()=>{sendMessageHandler()}} className="ri-telegram-2-fill cursor-pointer"/>
         </label>
         </div>

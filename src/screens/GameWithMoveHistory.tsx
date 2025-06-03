@@ -4,7 +4,7 @@ import ChessBoard from '../components/ChessBoard';
 import { Chess } from "chess.js";
 import { BoardSquare, ColorEnum } from '../types/gameTypes';
 import axios from 'axios';
-import { GET_GAME_WITH_MOVE_HISTORY } from '../config/endpoints';
+import { GET_GAME_WITH_MOVE_HISTORY } from '../config';
 import Button from '../components/Button';
 import { useUser } from '../contexts/userContext';
 import { playersDetailsType ,resultInfoType} from '../types/gameTypes';
@@ -114,25 +114,27 @@ const GameWithMoveHistory = () => {
     if(status == STATUS.LOADING) return <div className='w-[100vw] h-[100vh] flex justify-center items-center bg-black'><ChessLoader /></div>
     if(status == STATUS.NOT_FOUND) return <Error404/>
   return (
-    <div className='flex justify-evenly items-center bg-black h-[100vh]'>
-        <div className='w-1/4'>
-            <MovesView moves={movesList}></MovesView>
-        </div>
+    <>
+    <div className='flex flex-col md:flex-row justify-around items-center bg-black md:h-[100vh]'>
 
-        <div>
+        <div className='mt-50 md:mt-0'>
             <ChessBoardHeader imageURL='' name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
             <ChessBoard chessObj={chessObj.current} board={board}/>
             <ChessBoardHeader imageURL='' name={playersDetails.myPlayerName} time={playersTime.player1Time} />
         </div>
 
-        <div className='flex gap-5'>
-            <Button color='#0CB07B' onClick={()=>ButtonHandler('prev')}>Previous</Button>
-            <Button color='#0CB07B' onClick={()=>ButtonHandler('next')}>Next</Button>            
+        <div className='mt-10 w-3/4 md:w-1/4 flex flex-col gap-10 h-[70vh] md:justify-center'>
+            <div className='flex gap-5 justify-center py-5 rounded-2xl'>
+                <Button color='#0CB07B' onClick={()=>ButtonHandler('prev')}>Previous</Button>
+                <Button color='#0CB07B' onClick={()=>ButtonHandler('next')}>Next</Button>            
+            </div>
+            <MovesView moves={movesList}></MovesView>
         </div>
 
 
-        <ResultModal result={result}/>
     </div>
+        <ResultModal result={result}/>
+        </>
   )
 }
 

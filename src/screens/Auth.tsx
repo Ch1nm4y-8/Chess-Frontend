@@ -2,10 +2,11 @@ import { useState } from "react"
 import axios, { AxiosError } from "axios"
 import Button from "../components/Button"
 import Input from "../components/Input"
-import { SIGNUP ,LOGIN, SIGNIN_WITH_GOOGLE} from "../config/endpoints"
+import { SIGNUP ,LOGIN, SIGNIN_WITH_GOOGLE} from "../config"
 import { useNavigate } from "react-router-dom"
 import OAuthButton from "../components/OAuthButton"
 import React from "react"
+import { PRIMARY_COLOR } from "../config/constants"
 
 
 const Auth = () => {
@@ -63,17 +64,17 @@ const Auth = () => {
         <div className="absolute inset-0 bg-opacity-70"></div>
       
 
-        <div className='relative w-1/3 mt-10'>
+        <div className='relative xl:w-1/3 w-2/3 mt-10'>
             <div role="tablist" className="tabs tabs-lifted">
             <input type="radio" name="my_tabs_2" role="tab" className="tab text-sm" aria-label="LOGIN" defaultChecked/>
-            <div role="tabpanel" className="bg-black tab-content border-base-300 rounded-box p-6">
+            <div role="tabpanel" className="bg-black tab-content border-base-300 rounded-box p-6 ">
             <div className='flex justify-center'>
             <div className="card-body p-2">
                 <h2 className="card-title justify-center text-3xl">Login Page</h2>
                         <Input type="text" value={email} label={'Email'} placeholder="Email" onChange={(e)=>setEmail(e.target.value)} />
                         <Input type="text" value={password} label="Password" placeholder="Password" onChange={(e)=>setPassword(e.target.value)}  />
                 <div className="m-auto">
-                        <Button onClick={loginHandler}>Login</Button>
+                        <Button color={PRIMARY_COLOR} onClick={loginHandler}>Login</Button>
                 </div>
                 <div className="m-auto">
                         <OAuthButton onClick={signInWithGoogleHandler} imagePath="/assets/google.png" >Sign In With Google</OAuthButton>
@@ -102,7 +103,7 @@ const Auth = () => {
                     <Input type="text" value={password} label="Password" placeholder="Password" onChange={(e)=>setPassword(e.target.value)}  />
 
                     <div className="flex justify-center">
-                        <Button onClick={signUpHandler}>Sign Up</Button>
+                        <Button color={PRIMARY_COLOR} onClick={signUpHandler}>Sign Up</Button>
                     </div>
                     <div className="m-auto">
                         <OAuthButton onClick={signInWithGoogleHandler} imagePath="/assets/google.png" >Sign In With Google</OAuthButton>
