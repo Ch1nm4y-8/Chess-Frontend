@@ -535,58 +535,50 @@ const Game = () => {
               </div>
             </div> :
 
-          <div className="flex flex-col lg:h-[100vh] justify-between items-center lg:flex-row gap-5 lg:gap-0">
+          <div className="mt-10 xl:mt-0 flex flex-col lg:h-[100vh] justify-between items-center lg:flex-row gap-5 lg:gap-0">
                   
             <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] mx-5">
                 <h1 className="text-center text-2xl">SELECT GAME TYPE</h1>
                 <Button color="#0CB07B" onClick={()=>{setShowTypes(!showTypes)}}>{gameType}</Button>
                             {
                     showTypes &&
-                    <div className="flex flex-col items-center">
-                      <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="cursor-pointer bg-[#0CB07B] w-[10vw] p-1 m-3 lg:w-[5vw] text-black">1 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">1|1</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">2|1</button>
-                      </div>
-                      <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">3 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">3|2</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">5 min</button>
-                      </div>
-                      <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">10 min</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">15|10</button>
-                        <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[10vw] lg:w-[5vw] text-black">30 min</button>
-                      </div>
-                      <div>
-                        <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] p-1 m-3 w-[100%] text-black">Classic 60 min</button>
-                      </div>
+                    <div className="grid grid-cols-3 gap-4 ">
+                        <button onClick={()=>setGameType(GameTypesEnum["1|0"])} className="cursor-pointer bg-[#0CB07B] py-2  text-black">1 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["1|1"])} className="cursor-pointer bg-[#0CB07B] py-2  text-black">1|1</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["2|1"])} className="cursor-pointer bg-[#0CB07B] py-2  text-black">2|1</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|0"])} className="cursor-pointer bg-[#0CB07B]  py-2 text-black">3 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["3|2"])} className="cursor-pointer bg-[#0CB07B]  py-2 text-black">3|2</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["5|0"])} className="cursor-pointer bg-[#0CB07B]  py-2 text-black">5 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["10|0"])} className="cursor-pointer bg-[#0CB07B]  py-2 text-black">10 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["15|10"])} className="cursor-pointer bg-[#0CB07B] py-2  text-black">15|10</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["30|0"])} className="cursor-pointer bg-[#0CB07B]  py-2 text-black">30 min</button>
+                        <button onClick={()=>setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] col-span-3 row-span-3  text-black">Classic 60 min</button>
                     </div>
                   }
               </div>
             <div>
               <div className="flex flex-col gap-10 lg:flex-row">
                 <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-                  <h1  className="text-center text-2xl">CREATE ROOM</h1>
-                  <Button color="#0BA0E2" onClick={()=>{createGameHandler()}}>Create Game (Play With Friends)</Button>
-                  <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
-                </div>
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1 className="text-center text-2xl">PLAY ONLINE</h1>
                   <Button color="#0BA0E2" onClick={()=>{joinGameHandler()}}>Play Online</Button> 
-                  <h1 className="text-md">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
+                  <h1 className="text-md flex items-center gap-1">Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span></h1>
+                </div>
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1  className="text-center text-2xl">CREATE ROOM</h1>
+                  <Button color="#0BA0E2" onClick={()=>{createGameHandler()}}>Create Game (Play With Friends)</Button>
+                  <h1 className="text-md flex items-center gap-1">Selected Game : <span className="text-[#0CB07B] text-2xl alignmi">{gameType}</span></h1>
                 </div>
               </div>
               <div className="flex gap-10 my-10 flex-col lg:flex-row">
                 <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-                  <h1 className="text-center text-2xl">JOIN FRIENDS</h1>
-                  <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
-                  <Button color="#0BA0E2" onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
-                </div>
-                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
                   <h1 className="text-center text-2xl">SPECTATE GAME</h1>
                   <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setGameIdToSpectate(e.target.value)}  />
                   <Button color="#0BA0E2" onClick={()=>{spectateGameHandler()}}>Spectate Game</Button>
+                </div>
+                <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+                  <h1 className="text-center text-2xl">JOIN FRIENDS</h1>
+                  <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e)=>setInviteGameIdToJoin(e.target.value)}  />
+                  <Button color="#0BA0E2" onClick={()=>{joinWithFriendsGameHandler()}}>JOIN WITH FRIENDS</Button>
                 </div>
               </div>
             </div>
