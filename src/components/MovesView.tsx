@@ -15,10 +15,10 @@ const MovesView = ({ moves }: MovesViewProps) => {
   }, [moves])
 
   return (
-    <div className="h-[28vh] md:h-[80vh] flex flex-col">
-      <h1 className="text-white text-3xl text-center">Moves Made</h1>
+    <div className={`h-[28vh] md:h-[40vh] flex flex-col border border-[#444444]`}>
+      <h1 className="text-white text-3xl text-center border border-[#444444]">Moves Made</h1>
 
-      <div className="flex justify-evenly text-white pt-5 pb-2">
+      <div className="flex justify-evenly text-white pt-1 pb-2">
         <h1>WHITE</h1>
         <h1>BLACK</h1>
       </div>

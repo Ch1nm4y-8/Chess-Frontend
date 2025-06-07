@@ -19,6 +19,7 @@ import { PRIMARY_COLOR, SECONDARY_COLOR } from "../config/constants";
 import Modal from '../components/Modal'
 import { handleOpenOrCloseModal } from "../utils/handleOpenOrCloseModal";
 import ChessLoader from "../components/ChessLoader";
+import { Socket } from "socket.io-client";
 
 const Game = () => {
     interface gameResult {
@@ -67,6 +68,14 @@ const Game = () => {
     const timerRef = useRef<number>(0)
     const [startTimer,setStartTimer] = useState(false);
     
+    // WEBRTC
+    const rtcConnection = useRef<RTCPeerConnection>(null);
+    const [myStream, setMyStream] = useState<MediaStream>();
+    const myStreamRef = useRef<MediaStream>(null);
+    const [opponentStream, setOpponentStream] = useState<MediaStream>();
+    const myVideoRef = useRef<HTMLVideoElement>(null);
+    const opponentVideoRef = useRef<HTMLVideoElement>(null);
+
     
     const fromMove = useRef<string|null>(null);
     const navigate = useNavigate();
@@ -127,11 +136,9 @@ const Game = () => {
 
     const onClickSquareHandler = (row:number, col:number) =>{
       if (!socket || gameStatus.current==GameStatus.GAME_COMPLETED || playersDetails?.myRole!=PlayerRolesEnum.PLAYER){
-        console.log('no socket or game is completed or you are a spectator');
         return
       }
       const squareClicked = squareMapping(row,col,colorRef.current);
-      console.log('clicked '+squareClicked)
 
       
       if (!fromMove.current){
@@ -159,7 +166,6 @@ const Game = () => {
 
       if (gameId){
         socket.emit('join_room',JSON.stringify({'gameId':gameId}))
-        console.log('emitting join_room thissssssssss is the gameId '+gameId)
       } 
     },[gameId,socket])
 
@@ -187,7 +193,6 @@ const Game = () => {
       })
 
       socket.on('invalid',(msg)=>{
-        console.log('received invalid msg'+msg)
         alert(msg);
       })
 
@@ -220,9 +225,6 @@ const Game = () => {
       socket.off("rejoin_game").on('rejoin_game',(data)=>{
         const parsedData = JSON.parse(data) 
         const {playerRole, TotalGametime , myPlayerId,myPlayerName,opponentPlayerName,opponentPlayerId ,restored_chat_messages ,myPlayerPhotoURL ,opponentPlayerPhotoURL}=parsedData
-        console.log('rejoiningggggggg '+JSON.stringify(parsedData))
-        console.log(parsedData.board_status)
-        console.log(typeof parsedData.board_status)
 
  
         const chessObject = new Chess(parsedData.board_status)
@@ -239,13 +241,10 @@ const Game = () => {
           setMoves(Array.isArray(restoredOldMoves) ? restoredOldMoves : [])
           setPlayer1TimeConsumed(parsedData.player1TimeSpent)
           setPlayer2TimeConsumed(parsedData.player2TimeSpent)
-          console.log(parsedData.player1TimeSpent)
-          console.log(parsedData.player2TimeSpent)
           setStartTimer(true)
           setTotalGameTime(TotalGametime)
           setPlayersDetails({myPlayerName:myPlayerName,myPlayerId,opponentPlayerName:opponentPlayerName,opponentPlayerId,myRole:playerRole, myPlayerPhotoURL,opponentPlayerPhotoURL})  
           
-          console.log(restored_chat_messages)
           setMessages(restored_chat_messages)
           setJoinedGame(true);
       })
@@ -253,9 +252,6 @@ const Game = () => {
       socket.off("spectate_game").on('spectate_game',(data)=>{
         const parsedData = JSON.parse(data)
         const {playerRole,TotalGametime , player1Name, player2Name, myPlayerPhotoURL ,opponentPlayerPhotoURL} = parsedData;
-        console.log('im spectator , getting the game data '+JSON.stringify(parsedData))
-        console.log(parsedData.board_status)
-        console.log(typeof parsedData.board_status)
 
  
         const chessObject = new Chess(parsedData.board_status)
@@ -366,6 +362,17 @@ const Game = () => {
         socket.on('block_session',()=>{
           if(timerRef.current)clearInterval(timerRef.current)
           handleOpenOrCloseModal('block_session_modal',true)
+        })
+
+        socket.on('opponent:disconnected',()=>{
+          alert('opponent just disconnected bro')
+
+          rtcConnection.current = null;
+          const videoTrack = myStreamRef.current?.getVideoTracks()[0];
+          videoTrack?.stop();
+          setMyStream(undefined);
+          myStreamRef.current = null;
+          setOpponentStream(undefined);
         })
 
     }, [socket])
@@ -479,6 +486,142 @@ const Game = () => {
     },[startTimer])
     
   
+    
+    useEffect(()=>{
+      if(!socket) return;
+
+      socket.on('create:offer',async (response)=>{
+        console.log('recived offer');
+        if(!rtcConnection.current){
+          rtcConnection.current = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          });
+        }
+        receiveStream();
+        await rtcConnection.current.setRemoteDescription(response.offer);
+        const answer = await rtcConnection.current.createAnswer();
+        await rtcConnection.current.setLocalDescription(answer);
+        socket.emit('create:answer',{answer:answer});
+
+        rtcConnection.current.onnegotiationneeded=async ()=>{
+          const offer = await rtcConnection.current?.createOffer();
+          await rtcConnection.current?.setLocalDescription(offer);
+          socket.emit('create:offer',{offer:offer})
+        }
+
+        rtcConnection.current.onicecandidate = (e) => {
+          if (e.candidate) {
+            socket.emit('ice_candidate', e.candidate);
+          }
+        };
+      });
+
+
+      
+      socket.on('create:answer',(response)=>{
+        console.log('recevied answerrrrrr')
+        rtcConnection.current?.setRemoteDescription(response.answer);
+      })
+
+      socket.on('ice_candidate',(ice_candidate)=>{
+          rtcConnection.current?.addIceCandidate(ice_candidate);
+      })
+
+      socket.on('stream:off',()=>{
+        setOpponentStream(undefined)
+      })
+
+    },[socket])
+
+
+
+    async function requestCallHandler() {
+      if(!socket) return;
+
+      rtcConnection.current = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+
+      rtcConnection.current.ontrack = (event) =>{
+        setOpponentStream(event.streams[0])
+      }
+
+
+      rtcConnection.current.onnegotiationneeded=async ()=>{
+        console.log('creating offer , then sending offer')
+        await createWebRtcOffer(socket);
+      }
+
+      rtcConnection.current.onicecandidate = (e)=>{
+        if(e.candidate){
+          socket.emit('ice_candidate',e.candidate);
+        }
+      }
+
+      await sendStream()
+
+
+    }
+
+    const sendStream = async ()=>{
+      const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+      setMyStream(stream);
+      myStreamRef.current = stream;
+
+      rtcConnection.current?.addTrack(stream.getVideoTracks()[0],stream);
+    }
+
+    useEffect(() => {
+      if (myStream && myVideoRef.current) {
+        myVideoRef.current.srcObject = myStream;
+      }
+    }, [myStream]);
+
+    useEffect(() => {
+      if (opponentStream && opponentVideoRef.current) {
+        opponentVideoRef.current.srcObject = opponentStream;
+      }
+    }, [opponentStream]);
+
+    const receiveStream = () =>{
+      if(!rtcConnection.current) return;
+      console.log('inside receive stream')
+      rtcConnection.current.ontrack = (event) =>{
+          console.log("🔥 ontrack fired!", event.streams[0]);
+        setOpponentStream(event.streams[0])
+      }
+    }
+
+    const turnOffMyStream =async() =>{
+      if(!myStream||!socket) return;
+
+      const videoTrack = myStream.getVideoTracks()[0];
+      videoTrack.stop();
+
+      const sender = rtcConnection.current
+      ?.getSenders()
+      .find(s => s.track === videoTrack);
+
+    if (sender) {
+      rtcConnection.current?.removeTrack(sender);
+    }
+
+      setMyStream(undefined);
+      myStreamRef.current = null;
+      socket.emit('stream:off','stream:off')
+    }
+
+    const turnOnMyStream = () =>{
+      if(!socket) return;
+
+      sendStream();
+    }
+
+    const createWebRtcOffer = async (socket:Socket) =>{
+        const offer = await rtcConnection.current?.createOffer();
+        await rtcConnection.current?.setLocalDescription(offer);
+        socket.emit('create:offer',{offer:offer});
+    }
 
   return (
     // <div className="bg-gradient-to-t from-black via-[#0e0e0e] to-[#171717] p-10">
@@ -487,7 +630,55 @@ const Game = () => {
         {
           (joinedGame||gameId)?
             <div className="flex flex-wrap h-[100vh] justify-around items-center lg:flex-row">
-              <div className="order-2 lg:order-1 w-[90%] md:w-1/3 lg:w-1/6 ">
+              <div className="order-2 lg:order-1 w-[90%] md:w-1/3 lg:w-1/5 flex flex-col gap-10">
+                  {
+                    !rtcConnection.current ? 
+                    <div className="h-[100%]">
+                      <Button color="#0BA0E2" onClick={requestCallHandler}>Request Call</Button>
+                    </div>:
+                    <div className="w-[100%] md:h-[40vw] lg:h-[26vw] flex flex-col justify-between gap-1">
+                      <div>
+                        <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>My Stream</h1>
+                      {myStream? 
+                        <div className="border-1 border-[#444444] relative">
+                          <i className={`ri-video-off-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`} onClick={turnOffMyStream}/>
+                          <video
+                            ref={myVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full md:h-[15vw] lg:h-[11vw] object-cover"
+                          />
+                        </div>:
+                        <div className="w-[100%] md:h-[15vw] lg:h-[11vw] bg-[#111111] border-1 border-[#444444] flex justify-center items-center relative">
+                            <i className={`ri-video-on-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`} onClick={turnOnMyStream}/>
+                            <i className="ri-user-3-fill text-6xl " />
+                        </div>
+                      }
+                      </div>
+
+                      <div>
+                        <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>Opponent Stream</h1>
+                      {
+                      opponentStream? 
+                        <div className="border-1 border-[#444444] relative">
+                        {/* <i className={`ri-video-off-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 `}/> */}
+                              <video
+                                ref={opponentVideoRef}
+                                autoPlay
+                                playsInline
+                                className="w-full md:h-[15vw] lg:h-[11vw] object-cover"
+                              />
+                        </div>:
+                        <div className="w-[100%] md:h-[15vw] lg:h-[11vw] bg-[#111111] border-1 border-[#444444] flex justify-center items-center relative">
+                          {/* <i className={`ri-video-on-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`} onClick={()=>alert(1)}/> */}
+                          <i className="ri-user-3-fill text-6xl " />
+                        </div>
+                      }
+                      </div>
+                    </div>
+                  }
+
                 {moves.length>0 && <MovesView moves={moves}/>}
               </div>
               <div className="order-1 pt-5 lg:order-2 w-full md:w-2/3 lg:w-3/6 flex flex-col justify-center items-center md:h-[100vh] ">
@@ -507,7 +698,8 @@ const Game = () => {
               <div className="order-3 w-[90%] lg:w-2/8 pt-20 flex flex-col h-[60vh] lg:h-[100vh]">
                   {inviteGameIdToSend && !startTimer && gameMode==GameModeEnum.INVITE && <div title="Click to Copy" onClick={()=>{navigator.clipboard.writeText(inviteGameIdToSend);alert('game id copied')}} className={`bg-[#131313] border border-${PRIMARY_COLOR} hover:border-${SECONDARY_COLOR} cursor-pointer m-5 p-5 place-self-center text-sm`}><span className="text-3xl text-center ">Invite Code:</span><br/>{inviteGameIdToSend}</div>}
 
-                    {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult+'  '+resultInfo.gameResultReason}</h1>}
+                    {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult+' BY '+resultInfo.gameResultReason}</h1>}
+                    {resultInfo?.gameResult && <Button color={PRIMARY_COLOR} onClick={()=> window.location.href = '/game'}>NEW GAME</Button>}
 
                   { playersDetails?.myRole!=PlayerRolesEnum.SPECTATOR &&
                   <div className="flex flex-col gap-3">
