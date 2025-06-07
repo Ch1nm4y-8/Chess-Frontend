@@ -20,6 +20,7 @@ import Modal from '../components/Modal'
 import { handleOpenOrCloseModal } from "../utils/handleOpenOrCloseModal";
 import ChessLoader from "../components/ChessLoader";
 import { Socket } from "socket.io-client";
+import { toast, ToastContainer} from 'react-toastify'
 
 const Game = () => {
     interface gameResult {
@@ -365,7 +366,10 @@ const Game = () => {
         })
 
         socket.on('opponent:disconnected',()=>{
-          alert('opponent just disconnected bro')
+                 toast('Opponent Disconnected', {
+                  theme: "colored",
+                  type: 'error',
+                });
 
           rtcConnection.current = null;
           const videoTrack = myStreamRef.current?.getVideoTracks()[0];
@@ -626,6 +630,7 @@ const Game = () => {
   return (
     // <div className="bg-gradient-to-t from-black via-[#0e0e0e] to-[#171717] p-10">
     <div>
+      <ToastContainer position="top-center"/>
 
         {
           (joinedGame||gameId)?
