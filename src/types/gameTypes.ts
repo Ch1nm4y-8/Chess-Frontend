@@ -104,5 +104,14 @@ export interface resultInfoType{
     gameResultReason:string
 }
 
+export interface gameResult {
+    gameResult:gameResultEnum;
+    message:string;
+    winner:string;
+    gameResultReason:gameResultReasonEnum
+    player1TimeSpent?:number;
+    player2TimeSpent?:number;
+}
+
 
 

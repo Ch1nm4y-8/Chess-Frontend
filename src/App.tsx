@@ -5,6 +5,7 @@ import Game from './screens/Game';
 import Auth from './screens/Auth';
 import ProtectedRoute from './screens/ProtectedRoute';
 import { UserProvider } from './contexts/userContext';
+import { SocketContextProvider } from './contexts/SocketContext';
 import React from 'react';
 import GameHistory from './screens/GameHistory';
 import GameWithMoveHistory from './screens/GameWithMoveHistory';
@@ -17,6 +18,7 @@ function App() {
     <>
     <BrowserRouter>
     <UserProvider>
+      <SocketContextProvider>
       <Routes>
         <Route path="/" >
           <Route path='login' element={<Auth />} />
@@ -31,6 +33,7 @@ function App() {
 
         <Route path="*" element={<Error404 />} />
       </Routes>
+      </SocketContextProvider>
       </UserProvider>
     </BrowserRouter>
     </>
