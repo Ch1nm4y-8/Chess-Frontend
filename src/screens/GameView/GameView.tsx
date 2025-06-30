@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Button from "../../components/Button";
-import { SECONDARY_COLOR, PRIMARY_COLOR } from "../../config/constants";
+import { PRIMARY_COLOR } from "../../config/constants";
 import { Socket } from "socket.io-client";
 
 import ChatView from "../../components/ChatView";
@@ -27,6 +27,7 @@ import { handleOpenOrCloseModal } from "../../utils/handleOpenOrCloseModal";
 import { ToastContainer } from "react-toastify";
 import ResultModal from "../../components/ResultModal";
 import Modal from "../../components/Modal";
+import InviteGameId from "../../components/InviteGameId";
 
 interface GameBoardProp {
   socket: Socket;
@@ -96,30 +97,28 @@ const GameView = ({
   });
 
   useEffect(() => {
-    if (!socket || !gameId) return;
-    socket.emit("join_room", JSON.stringify({ gameId: gameId }));
+    if (!gameId) return;
+    socketEmit("join_room", JSON.stringify({ gameId: gameId }));
   }, [gameId, socket]);
 
+  const socketEmit = (event: string, data: unknown) => {
+    if (!socket) return console.warn("Socket missing");
+    socket.emit(event, data);
+  };
+
   const cancelJoinGameHandler = () => {
-    if (socket) {
-      socket.emit(
-        "cancel_join_game",
-        JSON.stringify({
-          gameMode,
-          gameType,
-          gameId: inviteGameIdToSend,
-        })
-      );
-    }
+    socketEmit(
+      "cancel_join_game",
+      JSON.stringify({
+        gameMode,
+        gameType,
+        gameId: inviteGameIdToSend,
+      })
+    );
   };
 
   const sendChatHandler = (message: string) => {
-    if (!socket) {
-      console.log("no socket");
-      return;
-    }
-
-    socket.emit(
+    socketEmit(
       "send_chat",
       JSON.stringify({
         userName: playersDetails.myPlayerName,
@@ -129,41 +128,27 @@ const GameView = ({
   };
 
   const abortGameHandler = (response: boolean) => {
-    // navigate('/')
-    if (!socket) {
-      console.log("no socket");
-      return;
-    }
-
     if (response) {
       if (gameStatus.current != GameStatus.GAME_COMPLETED)
-        socket.emit("abort_game", "abort_game");
+        socketEmit("abort_game", "abort_game");
     }
 
     handleOpenOrCloseModal("abort_game_modal", false);
   };
 
   const offerDrawHandler = () => {
-    if (socket && gameStatus.current != GameStatus.GAME_COMPLETED)
-      socket.emit(
+    if (gameStatus.current != GameStatus.GAME_COMPLETED)
+      socketEmit(
         "offer_draw:request_from_client",
         "offer_draw:request_from_client"
       );
-    // navigate('/')
   };
 
   const offerDrawClickHandler = (response: boolean) => {
-    if (!socket) {
-      console.log("no socket");
-      return;
-    }
-
-    socket.emit("offer_draw:response_from_opponent", response);
-
+    socketEmit("offer_draw:response_from_opponent", response);
     handleOpenOrCloseModal("draw_offer_modal", false);
   };
 
-  console.log("GameView rendered");
   return (
     <div>
       <ToastContainer position="top-center" />
@@ -173,8 +158,8 @@ const GameView = ({
           <VideoCallView />
           {moves.length > 0 && <MovesView moves={moves} />}
         </div>
+
         <div className="order-1 pt-5 lg:order-2 w-full md:w-2/3 lg:w-3/6 flex flex-col justify-center items-center md:h-[100vh] ">
-          {/* GameBoard HERE */}
           <GameBoard
             playersDetails={playersDetails}
             colorRef={colorRef}
@@ -219,18 +204,7 @@ const GameView = ({
           {inviteGameIdToSend &&
             !startTimer &&
             gameMode == GameModeEnum.INVITE && (
-              <div
-                title="Click to Copy"
-                onClick={() => {
-                  navigator.clipboard.writeText(inviteGameIdToSend);
-                  alert("game id copied");
-                }}
-                className={`bg-[#131313] border border-${PRIMARY_COLOR} hover:border-${SECONDARY_COLOR} cursor-pointer m-5 p-5 place-self-center text-sm`}
-              >
-                <span className="text-3xl text-center ">Invite Code:</span>
-                <br />
-                {inviteGameIdToSend}
-              </div>
+              <InviteGameId inviteGameIdToSend={inviteGameIdToSend} />
             )}
 
           {resultInfo?.gameResult && (
