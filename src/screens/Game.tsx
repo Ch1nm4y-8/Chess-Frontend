@@ -1,6 +1,6 @@
 import { useSocket } from "../contexts/SocketContext";
 import GameType from "./GameType";
-import GameBoard from "./GameBoard";
+import GameView from "./GameView/GameView";
 import { GameModeEnum, GameTypesEnum } from "../types/gameTypes";
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
@@ -20,7 +20,7 @@ const Game = () => {
           (joinedGame||gameId)?
           // (joinedGame)?
             
-            <GameBoard socket={socket} setJoinedGame={setJoinedGame} gameMode={gameMode} gameType={gameType} gameId={gameId}/>
+            <GameView socket={socket} setJoinedGame={setJoinedGame} gameMode={gameMode} gameType={gameType} gameId={gameId}/>
             :
             <GameType setJoinedGame={setJoinedGame} setGameMode={setGameMode} gameType={gameType} setGameType={setGameType}/>
         }
