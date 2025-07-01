@@ -39,61 +39,81 @@ const useWebRTCSocketHandlers = ({
     };
   };
 
+  const handleOffer = async (response: {
+    offer: RTCSessionDescriptionInit;
+  }) => {
+    console.log("recived offer");
+
+    if (!rtcConnection.current) {
+      rtcConnection.current = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
+    }
+
+    receiveStream();
+    await rtcConnection.current.setRemoteDescription(response.offer);
+    const answer = await rtcConnection.current.createAnswer();
+    await rtcConnection.current.setLocalDescription(answer);
+    socket.emit("create:answer", { answer });
+
+    rtcConnection.current.onnegotiationneeded = async () => {
+      const offer = await rtcConnection.current?.createOffer();
+      await rtcConnection.current?.setLocalDescription(offer);
+      socket.emit("create:offer", { offer });
+    };
+
+    rtcConnection.current.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit("ice_candidate", e.candidate);
+      }
+    };
+  };
+
+  const handleAnswer = (response: { answer: RTCSessionDescriptionInit }) => {
+    console.log("recevied answerrrrrr");
+    rtcConnection.current?.setRemoteDescription(response.answer);
+  };
+
+  const handleIceCandidate = (ice_candidate: RTCIceCandidate) => {
+    rtcConnection.current?.addIceCandidate(ice_candidate);
+  };
+
+  const handleStreamOff = () => {
+    setOpponentStream(undefined);
+  };
+
+  const handleDisconnect = () => {
+    toast("Opponent Disconnected", {
+      theme: "colored",
+      type: "error",
+    });
+
+    rtcConnection.current = null;
+
+    const videoTrack = myStreamRef.current?.getVideoTracks()[0];
+    videoTrack?.stop();
+
+    setMyStream(undefined);
+    myStreamRef.current = null;
+    setOpponentStream(undefined);
+  };
+
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("create:offer", async (response) => {
-      console.log("recived offer");
-      if (!rtcConnection.current) {
-        rtcConnection.current = new RTCPeerConnection({
-          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-        });
-      }
-      receiveStream();
-      await rtcConnection.current.setRemoteDescription(response.offer);
-      const answer = await rtcConnection.current.createAnswer();
-      await rtcConnection.current.setLocalDescription(answer);
-      socket.emit("create:answer", { answer: answer });
+    socket.on("create:offer", handleOffer);
+    socket.on("create:answer", handleAnswer);
+    socket.on("ice_candidate", handleIceCandidate);
+    socket.on("stream:off", handleStreamOff);
+    socket.on("opponent:disconnected", handleDisconnect);
 
-      rtcConnection.current.onnegotiationneeded = async () => {
-        const offer = await rtcConnection.current?.createOffer();
-        await rtcConnection.current?.setLocalDescription(offer);
-        socket.emit("create:offer", { offer: offer });
-      };
-
-      rtcConnection.current.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("ice_candidate", e.candidate);
-        }
-      };
-    });
-
-    socket.on("create:answer", (response) => {
-      console.log("recevied answerrrrrr");
-      rtcConnection.current?.setRemoteDescription(response.answer);
-    });
-
-    socket.on("ice_candidate", (ice_candidate) => {
-      rtcConnection.current?.addIceCandidate(ice_candidate);
-    });
-
-    socket.on("stream:off", () => {
-      setOpponentStream(undefined);
-    });
-
-    socket.on("opponent:disconnected", () => {
-      toast("Opponent Disconnected", {
-        theme: "colored",
-        type: "error",
-      });
-
-      rtcConnection.current = null;
-      const videoTrack = myStreamRef.current?.getVideoTracks()[0];
-      videoTrack?.stop();
-      setMyStream(undefined);
-      myStreamRef.current = null;
-      setOpponentStream(undefined);
-    });
+    return () => {
+      socket.off("create:offer", handleOffer);
+      socket.off("create:answer", handleAnswer);
+      socket.off("ice_candidate", handleIceCandidate);
+      socket.off("stream:off", handleStreamOff);
+      socket.off("opponent:disconnected", handleDisconnect);
+    };
   }, [socket]);
 
   useEffect(() => {
