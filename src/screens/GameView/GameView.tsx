@@ -23,11 +23,10 @@ import {
   GameTypesEnum,
 } from "../../types/gameTypes";
 import { Chess } from "chess.js";
-import { handleOpenOrCloseModal } from "../../utils/handleOpenOrCloseModal";
 import { ToastContainer } from "react-toastify";
-import ResultModal from "../../components/ResultModal";
 import Modal from "../../components/Modal";
 import InviteGameId from "../../components/InviteGameId";
+import ResultModalContent from "../../components/ResultModalContent";
 
 interface GameBoardProp {
   socket: Socket;
@@ -56,6 +55,10 @@ const GameView = ({
 
   const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS);
   const colorRef = useRef("");
+
+  const [activeModal, setActiveModal] = useState<
+    null | "abort" | "block" | "draw" | "result"
+  >(null);
 
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 1090;
@@ -88,6 +91,7 @@ const GameView = ({
     setMessages,
     setPlayerTimeConsumedFromServer,
     setMoves,
+    setActiveModal,
     chessObj,
     colorRef,
     timerRef,
@@ -133,7 +137,8 @@ const GameView = ({
         socketEmit("abort_game", "abort_game");
     }
 
-    handleOpenOrCloseModal("abort_game_modal", false);
+    // handleOpenOrCloseModal("abort_game_modal", false);
+    setActiveModal(null);
   };
 
   const offerDrawHandler = () => {
@@ -146,7 +151,7 @@ const GameView = ({
 
   const offerDrawClickHandler = (response: boolean) => {
     socketEmit("offer_draw:response_from_opponent", response);
-    handleOpenOrCloseModal("draw_offer_modal", false);
+    setActiveModal(null);
   };
 
   return (
@@ -180,7 +185,8 @@ const GameView = ({
                   <Button
                     color={PRIMARY_COLOR}
                     onClick={() => {
-                      handleOpenOrCloseModal("abort_game_modal", true);
+                      // handleOpenOrCloseModal("abort_game_modal", true);
+                      setActiveModal("abort");
                     }}
                   >
                     ABORT GAME
@@ -233,7 +239,8 @@ const GameView = ({
                       <Button
                         color={PRIMARY_COLOR}
                         onClick={() => {
-                          handleOpenOrCloseModal("abort_game_modal", true);
+                          // handleOpenOrCloseModal("abort_game_modal", true);
+                          setActiveModal("abort");
                         }}
                       >
                         ABORT GAME
@@ -275,7 +282,7 @@ const GameView = ({
       </div>
 
       {/* Make sure this modal renders only when required */}
-      <Modal modalName="abort_game_modal">
+      {/* <Modal modalName="abort_game_modal">
         <div>
           <h1 className="text-3xl pb-4">Are you sure you want to abort</h1>
           <div className="flex justify-around">
@@ -343,8 +350,93 @@ const GameView = ({
             </Button>
           </div>
         </div>
+      </Modal> */}
+
+      <Modal
+        isOpen={activeModal == "abort"}
+        onClose={() => setActiveModal(null)}
+      >
+        <div>
+          <h1 className="text-3xl pb-4">Are you sure you want to abort</h1>
+          <div className="flex justify-around">
+            <Button
+              color="#0BA0E2"
+              onClick={() => {
+                abortGameHandler(true);
+              }}
+            >
+              Yes
+            </Button>
+            <Button
+              color="#0CB07B"
+              onClick={() => {
+                abortGameHandler(false);
+              }}
+            >
+              No
+            </Button>
+          </div>
+        </div>
       </Modal>
-      <ResultModal result={resultInfo} />
+
+      <Modal
+        isOpen={activeModal == "block"}
+        onClose={() => setActiveModal(null)}
+      >
+        <div>
+          <h1 className="text-2xl pb-4">
+            Looks like you’re active in another tab.
+          </h1>
+          <h2 className="text-xl pb-4">
+            You can continue playing there or click below to switch to this
+            session.
+          </h2>
+          <div className="flex justify-around">
+            <Button
+              color="#0BA0E2"
+              onClick={() => {
+                window.location.reload();
+              }}
+            >
+              Play Here
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={activeModal == "draw"}
+        onClose={() => setActiveModal(null)}
+      >
+        <div>
+          <h1 className="text-3xl pb-4">Opponent Offered Draw</h1>
+          <div className="flex justify-around">
+            <Button
+              color="#0BA0E2"
+              onClick={() => {
+                offerDrawClickHandler(true);
+              }}
+            >
+              Accept
+            </Button>
+            <Button
+              color="#0CB07B"
+              onClick={() => {
+                offerDrawClickHandler(false);
+              }}
+            >
+              Reject
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={activeModal == "result"}
+        onClose={() => setActiveModal(null)}
+      >
+        <ResultModalContent result={resultInfo} />
+      </Modal>
     </div>
   );
 };

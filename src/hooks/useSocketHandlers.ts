@@ -13,7 +13,6 @@ import {
   ResponseStatus,
   resultInfoType,
 } from "../types/gameTypes";
-import { handleOpenOrCloseModal } from "../utils/handleOpenOrCloseModal";
 import { Chess } from "chess.js";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
@@ -35,6 +34,7 @@ interface useSocketHandlersProp {
     player2: number;
   }>;
   setMoves: SetState<string[]>;
+  setActiveModal: SetState<null | "abort" | "block" | "draw" | "result">;
 
   chessObj: React.RefObject<Chess>;
   colorRef: React.RefObject<string>;
@@ -56,6 +56,7 @@ const useSocketHandlers = ({
   setMessages,
   setPlayerTimeConsumedFromServer,
   setMoves,
+  setActiveModal,
 
   chessObj,
   colorRef,
@@ -104,7 +105,7 @@ const useSocketHandlers = ({
   };
 
   const handleDrawOffer = () => {
-    handleOpenOrCloseModal("draw_offer_modal", true);
+    setActiveModal("draw");
   };
 
   const handleInvalid = (msg: string) => {
@@ -278,7 +279,7 @@ const useSocketHandlers = ({
     }
 
     clearInterval(timerRef.current);
-    handleOpenOrCloseModal("result_modal", true);
+    setActiveModal("result");
   };
 
   const handleMessage = (data: string) => {
@@ -329,7 +330,7 @@ const useSocketHandlers = ({
 
   const handleBlockSession = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    handleOpenOrCloseModal("block_session_modal", true);
+    setActiveModal("block");
   };
 
   useEffect(() => {

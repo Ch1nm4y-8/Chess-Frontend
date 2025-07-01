@@ -1,20 +1,41 @@
-import React, { ReactNode } from 'react'
+import React, { useEffect, ReactNode, useRef } from "react";
 
-const Modal = ({children , modalName}:{children:ReactNode, modalName:string}) => {
-  return (
-    <div>
-        <dialog id={modalName} className="modal">
-        <div className="modal-box max-w-sm">
-            {children}
-            <div className="modal-action">
-            {/* <form method="dialog">
-                <button className="btn">Close</button>
-            </form> */}
-            </div>
-        </div>
-        </dialog>
-    </div>
-  )
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  size?: "sm" | "md" | "lg";
 }
 
-export default Modal
+const Modal = ({ isOpen, onClose, children, size = "sm" }: ModalProps) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+
+    const handleCancel = (e: Event) => {
+      e.preventDefault();
+      onClose();
+    };
+
+    dialog.addEventListener("cancel", handleCancel);
+    return () => dialog.removeEventListener("cancel", handleCancel);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+  console.log("modal is rednered");
+  return (
+    <dialog ref={dialogRef} className="modal">
+      <div className={`modal-box max-w-${size}`}>{children}</div>
+    </dialog>
+  );
+};
+
+export default Modal;
