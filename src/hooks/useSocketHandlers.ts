@@ -16,6 +16,7 @@ import {
 import { Chess } from "chess.js";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
+import { toast } from "react-toastify";
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -114,19 +115,7 @@ const useSocketHandlers = ({
 
   const handleJoinGame = (data: string) => {
     const parsedData = JSON.parse(data);
-    const {
-      message,
-      color,
-      gameId,
-      opponentPlayerName,
-      myPlayerName,
-      opponentPlayerId,
-      myPlayerId,
-      playerRole,
-      TotalGametime,
-      opponentPlayerPhotoURL,
-      myPlayerPhotoURL,
-    } = parsedData;
+    const { message, color, gameId, opponentPlayerName, myPlayerName, opponentPlayerId, myPlayerId, playerRole, TotalGametime, opponentPlayerPhotoURL, myPlayerPhotoURL } = parsedData;
 
     if (message === "Connected") {
       const chessObject = new Chess();
@@ -202,19 +191,7 @@ const useSocketHandlers = ({
 
   const handleSpectateGame = (data: string) => {
     const parsedData = JSON.parse(data);
-    const {
-      playerRole,
-      TotalGametime,
-      player1Name,
-      player2Name,
-      myPlayerPhotoURL,
-      opponentPlayerPhotoURL,
-      board_status,
-      restoredOldMoves,
-      color,
-      player1TimeSpent,
-      player2TimeSpent,
-    } = parsedData;
+    const { playerRole, TotalGametime, player1Name, player2Name, myPlayerPhotoURL, opponentPlayerPhotoURL, board_status, restoredOldMoves, color, player1TimeSpent, player2TimeSpent } = parsedData;
 
     const chessObject = new Chess(board_status);
     chessObj.current = chessObject;
@@ -254,26 +231,15 @@ const useSocketHandlers = ({
     });
 
     if (parsedResult.gameResult === gameResultEnum.WIN) {
-      if (
-        parsedResult.winner === playersDetailsRef.current.myPlayerId &&
-        playersDetailsRef.current?.myRole !== PlayerRolesEnum.SPECTATOR
-      ) {
+      if (parsedResult.winner === playersDetailsRef.current.myPlayerId && playersDetailsRef.current?.myRole !== PlayerRolesEnum.SPECTATOR) {
         triggerConfetti();
       }
 
-      if (
-        parsedResult.gameResultReason === gameResultReasonEnum.TIMEOUT &&
-        parsedResult.player1TimeSpent &&
-        parsedResult.player2TimeSpent
-      ) {
+      if (parsedResult.gameResultReason === gameResultReasonEnum.TIMEOUT && parsedResult.player1TimeSpent && parsedResult.player2TimeSpent) {
         setPlayerTimeConsumedFromServer((prev) => ({
           ...prev,
-          ...(parsedResult.player1TimeSpent
-            ? { player1: parsedResult.player1TimeSpent }
-            : {}),
-          ...(parsedResult.player2TimeSpent
-            ? { player2: parsedResult.player2TimeSpent }
-            : {}),
+          ...(parsedResult.player1TimeSpent ? { player1: parsedResult.player1TimeSpent } : {}),
+          ...(parsedResult.player2TimeSpent ? { player2: parsedResult.player2TimeSpent } : {}),
         }));
       }
     }
@@ -284,6 +250,10 @@ const useSocketHandlers = ({
 
   const handleMessage = (data: string) => {
     console.log("message received from server: " + data);
+    toast(data, {
+      theme: "colored",
+      type: "info",
+    });
   };
 
   const handleReceiveChat = (chatMessageObject: string) => {
