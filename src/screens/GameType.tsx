@@ -5,6 +5,7 @@ import { useSocket } from "../contexts/SocketContext";
 import { GameStatus, GameModeEnum } from "../types/gameTypes";
 import Input from "../components/Input";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 interface gameTypeProp {
   setJoinedGame: (value: boolean) => void;
@@ -70,6 +71,7 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
 
   return (
     <div>
+      <Navbar />
       <div className="mt-10 xl:mt-0 flex flex-col lg:h-[100vh] justify-between items-center lg:flex-row gap-5 lg:gap-0">
         <Button
           color="#0CB07B"

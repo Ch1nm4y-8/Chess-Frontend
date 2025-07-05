@@ -40,7 +40,7 @@ const GameWithMoveHistory = () => {
   const { user } = useUser();
   const [playersDetails, setPlayersDetails] = useState<playersDetailsType>({
     opponentPlayerName: "Opponent",
-    myPlayerName: user || "Me",
+    myPlayerName: user?.userName || "Me",
   });
   const currentMove = useRef<number>(0);
 
@@ -52,21 +52,10 @@ const GameWithMoveHistory = () => {
         });
         boardStates.current = response.data.movesData;
 
-        const {
-          player1Id,
-          player2Id,
-          winner,
-          gameResultReason,
-          gameType,
-          gameResult,
-        } = response.data.gameData;
+        const { player1Id, player2Id, winner, gameResultReason, gameType, gameResult } = response.data.gameData;
         const amIPlayer1 = player1Id.userName === user;
-        const myPlayerName = amIPlayer1
-          ? player1Id.userName
-          : player2Id.userName;
-        const opponentPlayerName = amIPlayer1
-          ? player2Id.userName
-          : player1Id.userName;
+        const myPlayerName = amIPlayer1 ? player1Id.userName : player2Id.userName;
+        const opponentPlayerName = amIPlayer1 ? player2Id.userName : player1Id.userName;
         const myColor = amIPlayer1 ? ColorEnum.WHITE : ColorEnum.BLACK;
         const opponentColor = amIPlayer1 ? ColorEnum.BLACK : ColorEnum.WHITE;
 
@@ -114,19 +103,12 @@ const GameWithMoveHistory = () => {
       }
       currentMove.current += 1;
       setMoveIndex(currentMove.current);
-      setMovesList((prev) => [
-        ...prev,
-        boardStates.current[currentMove.current].toMove,
-      ]);
+      setMovesList((prev) => [...prev, boardStates.current[currentMove.current].toMove]);
     }
 
     setPlayersTime({
-      player1Time: msToMinSec(
-        boardStates.current[currentMove.current].player1Time
-      ),
-      player2Time: msToMinSec(
-        boardStates.current[currentMove.current].player2Time
-      ),
+      player1Time: msToMinSec(boardStates.current[currentMove.current].player1Time),
+      player2Time: msToMinSec(boardStates.current[currentMove.current].player2Time),
     });
 
     chessObj.current.load(boardStates.current[currentMove.current].boardStatus);
@@ -151,20 +133,12 @@ const GameWithMoveHistory = () => {
   if (status === STATUS.NOT_FOUND) return <Error404 />;
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-around items-center bg-black md:h-[100vh]">
+    <div className="overflow-hidden">
+      <div className="flex flex-col md:flex-row justify-around items-center bg-black mt-15  overflow-hidden">
         <div className="mt-50 md:mt-0">
-          <ChessBoardHeader
-            imageURL=""
-            name={playersDetails.opponentPlayerName}
-            time={playersTime.player2Time}
-          />
+          <ChessBoardHeader imageURL="" name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
           <ChessBoard chessObj={chessObj.current} board={board} />
-          <ChessBoardHeader
-            imageURL=""
-            name={playersDetails.myPlayerName}
-            time={playersTime.player1Time}
-          />
+          <ChessBoardHeader imageURL="" name={playersDetails.myPlayerName} time={playersTime.player1Time} />
         </div>
 
         <div className="mt-10 w-3/4 md:w-1/4 flex flex-col gap-10 h-[70vh] md:justify-center">
@@ -180,13 +154,10 @@ const GameWithMoveHistory = () => {
         </div>
       </div>
 
-      <Modal
-        isOpen={showResultModal && moveIndex + 1 >= boardStates.current.length}
-        onClose={() => setShowResultModal(false)}
-      >
+      <Modal isOpen={showResultModal && moveIndex + 1 >= boardStates.current.length} onClose={() => setShowResultModal(false)}>
         <ResultModalContent result={result} />
       </Modal>
-    </>
+    </div>
   );
 };
 

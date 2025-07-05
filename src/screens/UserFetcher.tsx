@@ -1,43 +1,41 @@
-import axios from 'axios';
-import React, { useEffect, useState,ReactNode } from 'react'
-import { useUser } from '../contexts/userContext';
-import { ME } from '../config';
-import ChessLoader from '../components/ChessLoader';
+import axios from "axios";
+import React, { useEffect, useState, ReactNode } from "react";
+import { useUser } from "../contexts/userContext";
+import { ME } from "../config";
+import ChessLoader from "../components/ChessLoader";
 
-const UserFetcher = ({children}: { children: ReactNode }) => {
-  const [loading, setLoading] = useState(true)
+const UserFetcher = ({ children }: { children: ReactNode }) => {
+  const [loading, setLoading] = useState(true);
   const { setUser } = useUser();
 
   useEffect(() => {
-    const isAuthenticated = async()=>{
-      
-        try{
-          console.log('callingggggggggggggggggggg ME')
-            const result = await axios.get(ME,{withCredentials:true});
-            if (result.data.message.userName){
-              console.log('setting user '+result.data.message.userName)
-              setUser(result.data.message.userName);
-            }
-            else{
-                setUser(null)
-            }
-            
+    const isAuthenticated = async () => {
+      try {
+        console.log("callingggggggggggggggggggg ME");
+        const result = await axios.get(ME, { withCredentials: true });
+        if (result.data.message.userName) {
+          const { userName, photoURL } = result.data.message;
+          setUser({ userName, photoURL });
+        } else {
+          setUser(null);
         }
-        catch{
-          setUser(null)
-        }
-        finally{
-          setLoading(false);
-        }
-    }
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     isAuthenticated();
-}, [])
-  
+  }, []);
 
+  if (loading)
+    return (
+      <div className="w-[100vw] h-[100vh] flex justify-center items-center bg-black">
+        <ChessLoader />
+      </div>
+    );
 
-  if (loading) return <div className='w-[100vw] h-[100vh] flex justify-center items-center bg-black'><ChessLoader /></div>
+  return children;
+};
 
-  return children
-}
-
-export default UserFetcher
+export default UserFetcher;

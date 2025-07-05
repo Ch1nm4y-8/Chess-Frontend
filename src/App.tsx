@@ -11,6 +11,7 @@ import GameHistory from "./screens/GameHistory";
 import GameWithMoveHistory from "./screens/GameWithMoveHistory";
 import UserFetcher from "./screens/UserFetcher";
 import Error404 from "./screens/Error404";
+import Layout from "./components/Layout";
 
 function App() {
   return (
@@ -31,13 +32,12 @@ function App() {
                   </UserFetcher>
                 }
               >
-                <Route index element={<Home />} />
                 <Route path="game/:gameId?" element={<Game />} />
-                <Route path="history/game" element={<GameHistory />} />
-                <Route
-                  path="history/game/:gameId"
-                  element={<GameWithMoveHistory />}
-                />
+                <Route element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="history/game" element={<GameHistory />} />
+                  <Route path="history/game/:gameId" element={<GameWithMoveHistory />} />
+                </Route>
               </Route>
 
               <Route path="*" element={<Error404 />} />

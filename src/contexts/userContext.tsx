@@ -1,13 +1,18 @@
-import React,{ createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
+
+interface userDet {
+  userName: string;
+  photoURL: string;
+}
 
 type UserContextType = {
-    user: string | null;
-    setUser: (user: string | null) => void;
+  user: userDet | null;
+  setUser: (user: userDet | null) => void;
 };
 
 const defaultContext: UserContextType = {
-    user: null,
-    setUser: () => {},
+  user: null,
+  setUser: () => {},
 };
 
 export const UserContext = createContext<UserContextType>(defaultContext);
@@ -15,11 +20,7 @@ export const UserContext = createContext<UserContextType>(defaultContext);
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<string|null>(null);
+  const [user, setUser] = useState<userDet | null>(null);
 
-  return (
-    <UserContext.Provider value={{ user, setUser }}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={{ user, setUser }}>{children}</UserContext.Provider>;
 };

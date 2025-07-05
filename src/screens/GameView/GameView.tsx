@@ -99,6 +99,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
         gameId: inviteGameIdToSend,
       })
     );
+    setJoinedGame(false);
   };
 
   const sendChatHandler = (message: string) => {
