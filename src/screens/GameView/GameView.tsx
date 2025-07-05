@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Button from "../../components/Button";
 import { PRIMARY_COLOR } from "../../config/constants";
-import { Socket } from "socket.io-client";
 
 import ChatView from "../../components/ChatView";
 import MovesView from "../../components/MovesView";
@@ -12,53 +11,35 @@ import ChessLoader from "../../components/ChessLoader";
 import { useNavigate } from "react-router-dom";
 import useSocketHandlers from "../../hooks/useSocketHandlers";
 
-import {
-  BoardSquare,
-  PlayerRolesEnum,
-  MessagesType,
-  playersDetailsType,
-  GameModeEnum,
-  resultInfoType,
-  GameStatus,
-  GameTypesEnum,
-} from "../../types/gameTypes";
+import { BoardSquare, PlayerRolesEnum, MessagesType, playersDetailsType, GameModeEnum, resultInfoType, GameStatus, GameTypesEnum } from "../../types/gameTypes";
 import { Chess } from "chess.js";
 import { ToastContainer } from "react-toastify";
 import Modal from "../../components/Modal";
 import InviteGameId from "../../components/InviteGameId";
 import ResultModalContent from "../../components/ResultModalContent";
+import { useSocket } from "../../contexts/SocketContext";
 
 interface GameBoardProp {
-  socket: Socket;
   setJoinedGame: (value: boolean) => void;
   gameMode: GameModeEnum;
   gameType: GameTypesEnum;
   gameId: string | undefined;
 }
 
-const GameView = ({
-  socket,
-  setJoinedGame,
-  gameMode,
-  gameType,
-  gameId,
-}: GameBoardProp) => {
+const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) => {
+  const socket = useSocket();
   const chessObj = useRef<Chess>(new Chess());
   const [board, setBoard] = useState<BoardSquare[][]>(chessObj.current.board());
   const [moves, setMoves] = useState<string[]>([]);
   const [messages, setMessages] = useState<MessagesType[]>([]);
   const [inviteGameIdToSend, setInviteGameIdToSend] = useState<string>("");
-  const [totalGameTime, setTotalGameTime] = useState<number>(
-    Number(gameType.split("|")[0]) * 60 * 1000
-  );
+  const [totalGameTime, setTotalGameTime] = useState<number>(Number(gameType.split("|")[0]) * 60 * 1000);
   const [resultInfo, setResultInfo] = useState<resultInfoType | null>(null);
 
   const gameStatus = useRef<GameStatus>(GameStatus.IN_PROGRESS);
   const colorRef = useRef("");
 
-  const [activeModal, setActiveModal] = useState<
-    null | "abort" | "block" | "draw" | "result"
-  >(null);
+  const [activeModal, setActiveModal] = useState<null | "abort" | "block" | "draw" | "result">(null);
 
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 1090;
@@ -73,8 +54,7 @@ const GameView = ({
   }, [playersDetails]);
 
   // TIMER
-  const [playerTimeConsumedFromServer, setPlayerTimeConsumedFromServer] =
-    useState<{ player1: number; player2: number }>({ player1: 0, player2: 0 });
+  const [playerTimeConsumedFromServer, setPlayerTimeConsumedFromServer] = useState<{ player1: number; player2: number }>({ player1: 0, player2: 0 });
   const lastTimeTickRef = useRef<number>(Date.now());
   const timerRef = useRef<number>(0);
   const [startTimer, setStartTimer] = useState(false);
@@ -133,8 +113,7 @@ const GameView = ({
 
   const abortGameHandler = (response: boolean) => {
     if (response) {
-      if (gameStatus.current != GameStatus.GAME_COMPLETED)
-        socketEmit("abort_game", "abort_game");
+      if (gameStatus.current != GameStatus.GAME_COMPLETED) socketEmit("abort_game", "abort_game");
     }
 
     // handleOpenOrCloseModal("abort_game_modal", false);
@@ -142,11 +121,7 @@ const GameView = ({
   };
 
   const offerDrawHandler = () => {
-    if (gameStatus.current != GameStatus.GAME_COMPLETED)
-      socketEmit(
-        "offer_draw:request_from_client",
-        "offer_draw:request_from_client"
-      );
+    if (gameStatus.current != GameStatus.GAME_COMPLETED) socketEmit("offer_draw:request_from_client", "offer_draw:request_from_client");
   };
 
   const offerDrawClickHandler = (response: boolean) => {
@@ -180,44 +155,34 @@ const GameView = ({
 
           {isMobile && colorRef?.current && (
             <div className="flex m-auto gap-5 my-30 md:my-10">
-              {!resultInfo?.gameResult &&
-                playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
-                  <Button
-                    color={PRIMARY_COLOR}
-                    onClick={() => {
-                      // handleOpenOrCloseModal("abort_game_modal", true);
-                      setActiveModal("abort");
-                    }}
-                  >
-                    ABORT GAME
-                  </Button>
-                )}
-              {!resultInfo?.gameResult &&
-                playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
-                  <Button
-                    color={PRIMARY_COLOR}
-                    onClick={() => {
-                      offerDrawHandler();
-                    }}
-                  >
-                    OFFER DRAW
-                  </Button>
-                )}
+              {!resultInfo?.gameResult && playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
+                <Button
+                  color={PRIMARY_COLOR}
+                  onClick={() => {
+                    // handleOpenOrCloseModal("abort_game_modal", true);
+                    setActiveModal("abort");
+                  }}
+                >
+                  ABORT GAME
+                </Button>
+              )}
+              {!resultInfo?.gameResult && playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
+                <Button
+                  color={PRIMARY_COLOR}
+                  onClick={() => {
+                    offerDrawHandler();
+                  }}
+                >
+                  OFFER DRAW
+                </Button>
+              )}
             </div>
           )}
         </div>
         <div className="order-3 w-[90%] lg:w-2/8 pt-20 flex flex-col h-[60vh] lg:h-[100vh]">
-          {inviteGameIdToSend &&
-            !startTimer &&
-            gameMode == GameModeEnum.INVITE && (
-              <InviteGameId inviteGameIdToSend={inviteGameIdToSend} />
-            )}
+          {inviteGameIdToSend && !startTimer && gameMode == GameModeEnum.INVITE && <InviteGameId inviteGameIdToSend={inviteGameIdToSend} />}
 
-          {resultInfo?.gameResult && (
-            <h1 className="text-white text-4xl text-center">
-              {resultInfo.gameResult + " BY " + resultInfo.gameResultReason}
-            </h1>
-          )}
+          {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult + " BY " + resultInfo.gameResultReason}</h1>}
           {resultInfo?.gameResult && (
             <Button
               color={PRIMARY_COLOR}
@@ -234,43 +199,35 @@ const GameView = ({
             <div className="flex flex-col gap-3">
               {!isMobile && (
                 <div className="flex m-auto gap-5">
-                  {!resultInfo?.gameResult &&
-                    playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
-                      <Button
-                        color={PRIMARY_COLOR}
-                        onClick={() => {
-                          // handleOpenOrCloseModal("abort_game_modal", true);
-                          setActiveModal("abort");
-                        }}
-                      >
-                        ABORT GAME
-                      </Button>
-                    )}
-                  {!resultInfo?.gameResult &&
-                    playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
-                      <Button
-                        color={PRIMARY_COLOR}
-                        onClick={() => {
-                          offerDrawHandler();
-                        }}
-                      >
-                        OFFER DRAW
-                      </Button>
-                    )}
+                  {!resultInfo?.gameResult && playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
+                    <Button
+                      color={PRIMARY_COLOR}
+                      onClick={() => {
+                        // handleOpenOrCloseModal("abort_game_modal", true);
+                        setActiveModal("abort");
+                      }}
+                    >
+                      ABORT GAME
+                    </Button>
+                  )}
+                  {!resultInfo?.gameResult && playersDetails?.myRole == PlayerRolesEnum.PLAYER && (
+                    <Button
+                      color={PRIMARY_COLOR}
+                      onClick={() => {
+                        offerDrawHandler();
+                      }}
+                    >
+                      OFFER DRAW
+                    </Button>
+                  )}
                 </div>
               )}
               {colorRef.current ? (
-                <ChatView
-                  sendChatHandler={sendChatHandler}
-                  messages={messages}
-                  playerDetails={playersDetails}
-                />
+                <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails} />
               ) : (
                 <div className=" h-[80vh] flex flex-col">
                   <ChessLoader />
-                  <h1 className="text-2xl my-5">
-                    Waiting for a player to connect....
-                  </h1>
+                  <h1 className="text-2xl my-5">Waiting for a player to connect....</h1>
                   <Button color="#0CB07B" onClick={cancelJoinGameHandler}>
                     Cancel
                   </Button>
@@ -352,10 +309,7 @@ const GameView = ({
         </div>
       </Modal> */}
 
-      <Modal
-        isOpen={activeModal == "abort"}
-        onClose={() => setActiveModal(null)}
-      >
+      <Modal isOpen={activeModal == "abort"} onClose={() => setActiveModal(null)}>
         <div>
           <h1 className="text-3xl pb-4">Are you sure you want to abort</h1>
           <div className="flex justify-around">
@@ -379,18 +333,10 @@ const GameView = ({
         </div>
       </Modal>
 
-      <Modal
-        isOpen={activeModal == "block"}
-        onClose={() => setActiveModal(null)}
-      >
+      <Modal isOpen={activeModal == "block"} onClose={() => setActiveModal(null)}>
         <div>
-          <h1 className="text-2xl pb-4">
-            Looks like you’re active in another tab.
-          </h1>
-          <h2 className="text-xl pb-4">
-            You can continue playing there or click below to switch to this
-            session.
-          </h2>
+          <h1 className="text-2xl pb-4">Looks like you’re active in another tab.</h1>
+          <h2 className="text-xl pb-4">You can continue playing there or click below to switch to this session.</h2>
           <div className="flex justify-around">
             <Button
               color="#0BA0E2"
@@ -404,10 +350,7 @@ const GameView = ({
         </div>
       </Modal>
 
-      <Modal
-        isOpen={activeModal == "draw"}
-        onClose={() => setActiveModal(null)}
-      >
+      <Modal isOpen={activeModal == "draw"} onClose={() => setActiveModal(null)}>
         <div>
           <h1 className="text-3xl pb-4">Opponent Offered Draw</h1>
           <div className="flex justify-around">
@@ -431,10 +374,7 @@ const GameView = ({
         </div>
       </Modal>
 
-      <Modal
-        isOpen={activeModal == "result"}
-        onClose={() => setActiveModal(null)}
-      >
+      <Modal isOpen={activeModal == "result"} onClose={() => setActiveModal(null)}>
         <ResultModalContent result={resultInfo} />
       </Modal>
     </div>
