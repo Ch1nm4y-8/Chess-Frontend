@@ -72,18 +72,18 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
   return (
     <div>
       <Navbar />
-      <div className="mt-10 xl:mt-0 flex flex-col lg:h-[100vh] justify-between items-center lg:flex-row gap-5 lg:gap-0">
+      <div className="pt-20 overflow-hidden xl:mt-0 flex flex-col lg:h-[100vh] justify-around items-center lg:flex-row gap-5 lg:gap-0">
         <Button
           color="#0CB07B"
           onClick={() => {
             socket.emit("ping");
           }}
-          style={{ position: "absolute", left: 10, bottom: 10, borderRadius: "50%", height: "60px", width: "60px", textAlign: "center", padding: 0 }}
+          style={{ position: "fixed", left: 10, bottom: 10, borderRadius: "50%", height: "60px", width: "60px", textAlign: "center", padding: 0 }}
         >
           PING
         </Button>
 
-        <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] mx-5">
+        <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw]">
           <h1 className="text-center text-2xl">SELECT GAME TYPE</h1>
           <Button
             color="#0CB07B"
@@ -108,62 +108,22 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
             </div>
           )}
         </div>
+
         <div>
           <div className="flex flex-col gap-10 lg:flex-row">
-            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-              <h1 className="text-center text-2xl">PLAY ONLINE</h1>
-              <Button
-                color="#0BA0E2"
-                onClick={() => {
-                  joinGameHandler();
-                }}
-              >
-                Play Online
-              </Button>
-              <h1 className="text-md flex items-center gap-1">
-                Selected Game : <span className="text-[#0CB07B] text-2xl">{gameType}</span>
-              </h1>
-            </div>
-            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-              <h1 className="text-center text-2xl">CREATE ROOM</h1>
-              <Button
-                color="#0BA0E2"
-                onClick={() => {
-                  createGameHandler();
-                }}
-              >
-                Create Game (Play With Friends)
-              </Button>
-              <h1 className="text-md flex items-center gap-1">
-                Selected Game : <span className="text-[#0CB07B] text-2xl alignmi">{gameType}</span>
-              </h1>
-            </div>
+            <GameSection title="PLAY ONLINE" buttonText="Play Online" onClick={joinGameHandler} gameType={gameType} />
+
+            <GameSection title="CREATE ROOM" buttonText="Create Game (Play With Friends)" onClick={createGameHandler} gameType={gameType} />
           </div>
+
           <div className="flex gap-10 my-10 flex-col lg:flex-row">
-            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-              <h1 className="text-center text-2xl">SPECTATE GAME</h1>
+            <GameSection title="SPECTATE GAME" buttonText="Spectate Game" onClick={spectateGameHandler}>
               <Input type="text" value={gameIdToSpectate} label="Game Id" placeholder="Enter Game Id" onChange={(e) => setGameIdToSpectate(e.target.value)} />
-              <Button
-                color="#0BA0E2"
-                onClick={() => {
-                  spectateGameHandler();
-                }}
-              >
-                Spectate Game
-              </Button>
-            </div>
-            <div className="flex flex-col gap-5 bg-[#131313] p-10 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
-              <h1 className="text-center text-2xl">JOIN FRIENDS</h1>
+            </GameSection>
+
+            <GameSection title="JOIN FRIENDS" buttonText="JOIN WITH FRIENDS" onClick={joinWithFriendsGameHandler}>
               <Input type="text" value={inviteGameIdToJoin} label="Game Id" placeholder="Enter Game Id" onChange={(e) => setInviteGameIdToJoin(e.target.value)} />
-              <Button
-                color="#0BA0E2"
-                onClick={() => {
-                  joinWithFriendsGameHandler();
-                }}
-              >
-                JOIN WITH FRIENDS
-              </Button>
-            </div>
+            </GameSection>
           </div>
         </div>
       </div>
@@ -172,3 +132,26 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
 };
 
 export default GameType;
+
+interface GameSectionProp {
+  title: string;
+  buttonText: string;
+  onClick: () => void;
+  gameType?: GameTypesEnum;
+  children?: React.ReactNode;
+}
+
+const GameSection = ({ title, buttonText, onClick, gameType, children }: GameSectionProp) => (
+  <div className="flex flex-col gap-5 bg-[#131313] p-6 w-[80vw] lg:w-[30vw] m-auto lg:m-0 hover:shadow-white hover:shadow-[-5px_5px_20px_rgba(0,0,0,0.3)]">
+    <h1 className="text-center text-2xl">{title}</h1>
+    {children}
+    <Button color="#0BA0E2" onClick={onClick}>
+      {buttonText}
+    </Button>
+    {gameType && (
+      <h1 className="text-md flex items-center gap-1">
+        Selected Game: <span className="text-[#0CB07B] text-2xl">{gameType}</span>
+      </h1>
+    )}
+  </div>
+);

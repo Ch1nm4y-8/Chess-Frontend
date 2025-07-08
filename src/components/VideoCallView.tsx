@@ -68,9 +68,7 @@ const VideoCallView = () => {
     const videoTrack = myStream.getVideoTracks()[0];
     videoTrack.stop();
 
-    const sender = rtcConnection.current
-      ?.getSenders()
-      .find((s) => s.track === videoTrack);
+    const sender = rtcConnection.current?.getSenders().find((s) => s.track === videoTrack);
 
     if (sender) {
       rtcConnection.current?.removeTrack(sender);
@@ -94,7 +92,7 @@ const VideoCallView = () => {
   };
 
   return (
-    <>
+    <div className="hidden md:block">
       {!rtcConnection.current ? (
         <div className="h-[100%]">
           <Button color="#0BA0E2" onClick={requestCallHandler}>
@@ -104,47 +102,26 @@ const VideoCallView = () => {
       ) : (
         <div className="w-[100%] md:h-[40vw] lg:h-[26vw] flex flex-col justify-between gap-1">
           <div>
-            <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>
-              My Stream
-            </h1>
+            <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>My Stream</h1>
             {myStream ? (
               <div className="border-1 border-[#444444] relative">
-                <i
-                  className={`ri-video-off-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`}
-                  onClick={turnOffMyStream}
-                />
-                <video
-                  ref={myVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full md:h-[15vw] lg:h-[11vw] object-cover"
-                />
+                <i className={`ri-video-off-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`} onClick={turnOffMyStream} />
+                <video ref={myVideoRef} autoPlay playsInline muted className="w-full md:h-[15vw] lg:h-[11vw] object-cover" />
               </div>
             ) : (
               <div className="w-[100%] md:h-[15vw] lg:h-[11vw] bg-[#111111] border-1 border-[#444444] flex justify-center items-center relative">
-                <i
-                  className={`ri-video-on-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`}
-                  onClick={turnOnMyStream}
-                />
+                <i className={`ri-video-on-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 z-10`} onClick={turnOnMyStream} />
                 <i className="ri-user-3-fill text-6xl " />
               </div>
             )}
           </div>
 
           <div>
-            <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>
-              Opponent Stream
-            </h1>
+            <h1 className={`text-center text-xl bg-[${SECONDARY_COLOR}]`}>Opponent Stream</h1>
             {opponentStream ? (
               <div className="border-1 border-[#444444] relative">
                 {/* <i className={`ri-video-off-fill text-black bg-[#0BA0E2] cursor-pointer px-1 absolute top-1 left-1 `}/> */}
-                <video
-                  ref={opponentVideoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full md:h-[15vw] lg:h-[11vw] object-cover"
-                />
+                <video ref={opponentVideoRef} autoPlay playsInline className="w-full md:h-[15vw] lg:h-[11vw] object-cover" />
               </div>
             ) : (
               <div className="w-[100%] md:h-[15vw] lg:h-[11vw] bg-[#111111] border-1 border-[#444444] flex justify-center items-center relative">
@@ -155,7 +132,7 @@ const VideoCallView = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

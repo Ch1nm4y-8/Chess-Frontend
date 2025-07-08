@@ -1,33 +1,59 @@
+import { useState } from "react";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useUser } from "../contexts/userContext";
 
 const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
   console.log(user);
 
-  return (
-    <nav className="hidden lg:flex bg-[#565757] text-black bg-opacity-50 backdrop-blur-3xl absolute top-0 left-1/2 transform -translate-x-1/2 z-10 justify-between items-center w-[50vw] px-7 py-3 mt-2 rounded-4xl text-xl">
-      <Link to="/" className="flex items-center gap-3">
-        <div className="w-[2vw]">
-          <img
-            className="rounded-full w-full h-full"
-            src={user?.photoURL}
-            onError={(e) => {
-              e.currentTarget.src = "https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif";
-            }}
-            alt=""
-          />
-        </div>
-        <h1>{user?.userName.toUpperCase()}</h1>
-      </Link>
+  const navbarData = [
+    { label: "Home", to: "/" },
+    { label: "Play", to: "/game" },
+    { label: "History", to: "/history/game" },
+  ];
 
-      <div className="flex items-center justify-center gap-10">
-        <Link to="/">Home</Link>
-        <Link to="/game">Play</Link>
-        <Link to="/history/game">History</Link>
-      </div>
-    </nav>
+  return (
+    <>
+      <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90vw] max-w-6xl bg-[#0f0f0f] border border-[#1f1f1f] text-white px-6 py-3 rounded-xl shadow-md flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-[#0BA0E2] overflow-hidden">
+            <img
+              src={user?.photoURL || "https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif"}
+              onError={(e) => {
+                e.currentTarget.src = "https://www.chess.com/bundles/web/images/noavatar_l.84a92436@2x.gif";
+              }}
+              alt="avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span className="text-[#0BA0E2] font-bold">{user?.userName.toUpperCase()}</span>
+        </Link>
+
+        <div className="hidden sm:flex gap-8 ml-auto">
+          {navbarData.map((item, i) => (
+            <Link key={i} to={item.to} className="px-4 py-1 rounded-md text-sm font-semibold hover:bg-[#0BA0E2] hover:text-black transition">
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
+        <button onClick={() => setIsOpen(!isOpen)} className="text-white  cursor-pointer text-2xl sm:hidden ml-auto">
+          {isOpen ? "X" : "☰"}
+        </button>
+
+        {isOpen && (
+          <div className="absolute top-full mt-2 left-0 w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-xl shadow-lg px-6 py-4 flex flex-col gap-3 lg:hidden">
+            {navbarData.map((item, i) => (
+              <Link key={i} to={item.to} onClick={() => setIsOpen(false)} className="px-4 py-2 rounded-md hover:bg-[#0BA0E2] hover:text-black transition">
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </nav>
+    </>
   );
 };
 

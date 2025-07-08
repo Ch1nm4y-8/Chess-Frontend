@@ -135,7 +135,7 @@ const GameWithMoveHistory = () => {
   return (
     <div className="overflow-hidden">
       <div className="flex flex-col md:flex-row justify-around items-center bg-black mt-15  overflow-hidden">
-        <div className="mt-50 md:mt-0">
+        <div className="mt-5">
           <ChessBoardHeader imageURL="" name={playersDetails.opponentPlayerName} time={playersTime.player2Time} />
           <ChessBoard chessObj={chessObj.current} board={board} />
           <ChessBoardHeader imageURL="" name={playersDetails.myPlayerName} time={playersTime.player1Time} />
