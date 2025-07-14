@@ -26,16 +26,28 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
 
   const gameTypesArray = Object.values(GameTypesEnum).slice(1);
 
+  const handleRedirectGame = (redirectToGameId: string) => {
+    const parsed = JSON.parse(redirectToGameId);
+    navigate("/game/" + parsed.gameId);
+  };
+
+  const handleAlreadyWaitingState = (value: string) => {
+    if (value == "waiting") {
+      setJoinedGame(true);
+    }
+  };
+
   useEffect(() => {
     socket.on("pong", (msg) => {
       alert(msg);
     });
+    socket.on("state", handleAlreadyWaitingState);
+    socket.on("redirect:game", handleRedirectGame);
 
-    socket.on("state", (value) => {
-      if (value == "waiting") {
-        setJoinedGame(true);
-      }
-    });
+    return () => {
+      socket.off("state", handleAlreadyWaitingState);
+      socket.off("redirect:game", handleRedirectGame);
+    };
   }, [socket]);
 
   const joinGameHandler = () => {
