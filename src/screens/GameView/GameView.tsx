@@ -136,7 +136,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
 
       <div className="flex flex-wrap h-[100vh] justify-around items-center lg:flex-row">
         <div className="order-2 lg:order-1 w-[90%] md:w-1/3 lg:w-1/5 flex flex-col gap-10">
-          <VideoCallView />
+          {colorRef.current && <VideoCallView />}
           {moves.length > 0 && <MovesView moves={moves} />}
         </div>
 

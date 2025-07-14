@@ -303,6 +303,10 @@ const useSocketHandlers = ({
     setActiveModal("block");
   };
 
+  const handleMatchMakeTimeout = () => {
+    setJoinedGame(false);
+  };
+
   useEffect(() => {
     if (!socket) return;
 
@@ -321,6 +325,7 @@ const useSocketHandlers = ({
     socket.on("redirect:history", handleRedirectHistory);
     socket.on("redirect:game", handleRedirectGame);
     socket.on("block_session", handleBlockSession);
+    socket.on("matchmake_timeout", handleMatchMakeTimeout);
 
     return () => {
       socket.off("state", handleState);
@@ -338,6 +343,7 @@ const useSocketHandlers = ({
       socket.off("redirect:history", handleRedirectHistory);
       socket.off("redirect:game", handleRedirectGame);
       socket.off("block_session", handleBlockSession);
+      socket.off("matchmake_timeout", handleMatchMakeTimeout);
     };
   }, [socket]);
 };

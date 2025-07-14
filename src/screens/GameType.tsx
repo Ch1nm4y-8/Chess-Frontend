@@ -30,6 +30,12 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
     socket.on("pong", (msg) => {
       alert(msg);
     });
+
+    socket.on("state", (value) => {
+      if (value == "waiting") {
+        setJoinedGame(true);
+      }
+    });
   }, [socket]);
 
   const joinGameHandler = () => {
