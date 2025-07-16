@@ -2,7 +2,6 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./screens/Home";
 import Game from "./screens/Game";
-import Auth from "./screens/Auth";
 import ProtectedRoute from "./screens/ProtectedRoute";
 import { UserProvider } from "./contexts/userContext";
 import { SocketContextProvider } from "./contexts/SocketContext";
@@ -12,6 +11,9 @@ import GameWithMoveHistory from "./screens/GameWithMoveHistory";
 import UserFetcher from "./screens/UserFetcher";
 import Error404 from "./screens/Error404";
 import Layout from "./components/Layout";
+import RedirectIfAuthenticated from "./screens/RedirectIfAuthenticated";
+import Login from "./screens/Login";
+import Signup from "./screens/Signup";
 
 function App() {
   return (
@@ -21,7 +23,26 @@ function App() {
           <SocketContextProvider>
             <Routes>
               <Route path="/">
-                <Route path="login" element={<Auth />} />
+                <Route
+                  path="login"
+                  element={
+                    <UserFetcher>
+                      <RedirectIfAuthenticated>
+                        <Login />
+                      </RedirectIfAuthenticated>
+                    </UserFetcher>
+                  }
+                />
+                <Route
+                  path="signup"
+                  element={
+                    <UserFetcher>
+                      <RedirectIfAuthenticated>
+                        <Signup />
+                      </RedirectIfAuthenticated>
+                    </UserFetcher>
+                  }
+                />
               </Route>
 
               <Route
