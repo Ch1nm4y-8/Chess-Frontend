@@ -32,7 +32,7 @@ const OtpComponent = ({ otp, setOtp }: OtpComponentType) => {
   }
 
   return (
-    <div className="flex justify-around">
+    <div className="flex justify-around flex-wrap">
       {otp.map((digit, i) => (
         <input
           key={i}
@@ -42,7 +42,7 @@ const OtpComponent = ({ otp, setOtp }: OtpComponentType) => {
           }}
           onChange={(e) => handleChange(e.target.value, i)}
           onKeyDown={(e) => handleKeyDown(e, i)}
-          className="border text-center text-2xl border-white w-10 h-10 focus:outline-none bg-[#111111] focus:border-[#0BA0E2]"
+          className="border text-center text-2xl border-white w-7 h-7 sm:w-10 sm:h-10 focus:outline-none bg-[#111111] focus:border-[#0BA0E2]"
         />
       ))}
     </div>

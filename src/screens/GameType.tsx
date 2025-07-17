@@ -85,6 +85,7 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
     }
     socket.emit("join_invite_game", JSON.stringify({ inviteGameId: inviteGameIdToJoin }));
     setGameMode(GameModeEnum.INVITE);
+    setJoinedGame(true);
   };
 
   return (

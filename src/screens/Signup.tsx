@@ -101,8 +101,8 @@ const Signup = () => {
     <div>
       <ToastContainer position="top-center" />
 
-      <div className="h-screen  py-3 bg-center bg-cover flex gap-10 justify-center items-center" style={{ backgroundImage: "url('/assets/auth-bg.avif')" }}>
-        <div className="relative xl:w-1/3 w-2/3 mt-10 ">
+      <div className="h-screen  py-3 bg-center bg-cover flex flex-col xl:flex-row gap-10 justify-center items-center" style={{ backgroundImage: "url('/assets/auth-bg.avif')" }}>
+        <div className="relative xl:w-1/3 w-2/3 mt-10">
           <div role="tablist" className="tabs tabs-lift">
             <input
               type="radio"

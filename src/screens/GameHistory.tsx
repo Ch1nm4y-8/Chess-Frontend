@@ -48,7 +48,7 @@ const GameHistory = () => {
       {gamesData.length == 0 ? (
         <div className=" text-[#0BA0E2] uppercase w-full text-2xl h-[70vmin] flex justify-center items-center ">No Game Data Available</div>
       ) : (
-        <div className="h-[70vh] w-[80vw] m-auto pt-5  overflow-auto grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+        <div className="items-start h-[70vh] w-[80vw] m-auto pt-5  overflow-auto grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
           {gamesData.map((game, index) => (
             <div
               key={game.GameId}
@@ -65,15 +65,15 @@ const GameHistory = () => {
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-green-400 font-medium">Player 1:</span>
-                      <span>{game.player1Id.userName}</span>
+                      <span>{game.player1Id?.userName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-green-400 font-medium">Player 2:</span>
-                      <span>{game.player2Id.userName}</span>
+                      <span>{game.player2Id?.userName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-green-400 font-medium">Date :</span>
-                      <span>{formatDate(new Date(game.createdAt))}</span>
+                      <span>{formatDate(new Date(game?.createdAt))}</span>
                     </div>
                   </div>
                 </div>
