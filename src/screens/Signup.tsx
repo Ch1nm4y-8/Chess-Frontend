@@ -37,6 +37,7 @@ const Signup = () => {
 
       console.log(result.data);
       setShowVerifyEmail(true);
+      setError(undefined);
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
         console.log("ERROR CAUGHT " + JSON.stringify(err.response.data));

@@ -1,18 +1,43 @@
 import { useState } from "react";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/userContext";
+import axios, { AxiosError } from "axios";
+import { LOGOUT } from "../config";
+import ChessLoader from "./ChessLoader";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { user } = useUser();
-  console.log(user);
+  const navigate = useNavigate();
+
+  const logoutHandler = async () => {
+    try {
+      setLoading(true);
+      await axios.get(LOGOUT, { withCredentials: true });
+      navigate("/login");
+    } catch (err) {
+      if (err instanceof AxiosError && err.response) {
+        console.log("ERROR CAUGHT " + JSON.stringify(err.response.data));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navbarData = [
     { label: "Home", to: "/" },
     { label: "Play", to: "/game" },
     { label: "History", to: "/history/game" },
   ];
+
+  if (loading)
+    return (
+      <div className="absolute top-0 left-0 z-10 bg-black w-full h-screen flex justify-center items-center">
+        <ChessLoader />
+      </div>
+    );
 
   return (
     <>
@@ -37,6 +62,9 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
+          <button onClick={logoutHandler} className="hover:cursor-pointer px-4 py-1 rounded-md text-sm font-semibold hover:bg-[#0BA0E2] hover:text-black transition">
+            Logout
+          </button>
         </div>
 
         <button onClick={() => setIsOpen(!isOpen)} className="text-white  cursor-pointer text-2xl sm:hidden ml-auto">
@@ -46,10 +74,13 @@ const Navbar = () => {
         {isOpen && (
           <div className="absolute top-full mt-2 left-0 w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-xl shadow-lg px-6 py-4 flex flex-col gap-3 lg:hidden">
             {navbarData.map((item, i) => (
-              <Link key={i} to={item.to} onClick={() => setIsOpen(false)} className="px-4 py-2 rounded-md hover:bg-[#0BA0E2] hover:text-black transition">
+              <Link key={i} to={item.to} onClick={() => setIsOpen(false)} className="px-4 py-2 text-center rounded-md hover:bg-[#0BA0E2] hover:text-black transition">
                 {item.label}
               </Link>
             ))}
+            <button onClick={logoutHandler} className="px-4 py-2 rounded-md hover:bg-[#0BA0E2] hover:text-black transition hover:cursor-pointer">
+              Logout
+            </button>
           </div>
         )}
       </nav>
