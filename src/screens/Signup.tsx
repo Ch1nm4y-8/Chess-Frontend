@@ -121,8 +121,9 @@ const Signup = () => {
                   <h2 className="card-title justify-center text-3xl">Sign Up Page</h2>
 
                   <Input disabled={showVerifyEmail} type="text" value={userName} label="Username" placeholder="Username" onChange={(e) => setUserName(e.target.value)} />
-                  <Input disabled={showVerifyEmail} type="text" value={email} label="Email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-                  <Input disabled={showVerifyEmail} type="text" value={password} label="Password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+                  <Input disabled={showVerifyEmail} type="email" value={email} label="Email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
+                  <Input disabled={showVerifyEmail} type="password" value={password} label="Password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+                  {error && error?.message && <h1 className="text-red-500 text-sm mt-2">{error.message}</h1>}
 
                   <div className="flex justify-center">
                     <Button color={PRIMARY_COLOR} onClick={signUpHandler}>
@@ -138,7 +139,6 @@ const Signup = () => {
               </div>
             </div>
           </div>
-          {error && <h1>{error.message}</h1>}
         </div>
 
         {showVerifyEmail && (

@@ -14,6 +14,7 @@ import Layout from "./components/Layout";
 import RedirectIfAuthenticated from "./screens/RedirectIfAuthenticated";
 import Login from "./screens/Login";
 import Signup from "./screens/Signup";
+import ForgotPassword from "./screens/ForgotPassword";
 
 function App() {
   return (
@@ -39,6 +40,16 @@ function App() {
                     <UserFetcher>
                       <RedirectIfAuthenticated>
                         <Signup />
+                      </RedirectIfAuthenticated>
+                    </UserFetcher>
+                  }
+                />
+                <Route
+                  path="forgot-password"
+                  element={
+                    <UserFetcher>
+                      <RedirectIfAuthenticated>
+                        <ForgotPassword />
                       </RedirectIfAuthenticated>
                     </UserFetcher>
                   }
