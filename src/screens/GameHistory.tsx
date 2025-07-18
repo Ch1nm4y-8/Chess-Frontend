@@ -48,19 +48,19 @@ const GameHistory = () => {
       {gamesData.length == 0 ? (
         <div className=" text-[#0BA0E2] uppercase w-full text-2xl h-[70vmin] flex justify-center items-center ">No Game Data Available</div>
       ) : (
-        <div className="items-start h-[70vh] w-[80vw] m-auto pt-5  overflow-auto grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+        <div className="items-start h-[70vh] w-[80vw] m-auto pt-5  overflow-auto grid grid-cols-1 xl:grid-cols-2 gap-4 px-4">
           {gamesData.map((game, index) => (
             <div
               key={game.GameId}
               onClick={() => clickHandler(game.GameId)}
               className="bg-gradient-to-r from-[#1f1f1f] to-[#2a2a2a]  hover:border-[#0BA0E2] text-white p-6 rounded-2xl cursor-pointer shadow-lg transition-all duration-300 border border-white/10 hover:scale-[1.02]"
             >
-              <div className="flex  justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-3">
                 <h2 className="text-lg font-semibold tracking-wide text-cyan-400">Game #{index + 1}</h2>
                 <p className="text-xs text-gray-400">ID: {game.GameId}</p>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row items-center justify-between">
                 <div>
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">

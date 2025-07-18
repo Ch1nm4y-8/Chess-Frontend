@@ -180,20 +180,30 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
             </div>
           )}
         </div>
-        <div className="order-3 w-[90%] lg:w-2/8 pt-20 flex flex-col h-[60vh] lg:h-[100vh]">
+        <div className="order-3 w-[90%] lg:w-2/8 flex flex-col justify-center h-[60vh] lg:h-[100vh]">
           {inviteGameIdToSend && !startTimer && gameMode == GameModeEnum.INVITE && <InviteGameId inviteGameIdToSend={inviteGameIdToSend} />}
 
-          {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult + " BY " + resultInfo.gameResultReason}</h1>}
+          {/* {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult + " BY " + resultInfo.gameResultReason}</h1>} */}
           {resultInfo?.gameResult && (
-            <Button
-              color={PRIMARY_COLOR}
-              onClick={() => {
-                setJoinedGame(false);
-                navigate("/game");
-              }}
-            >
-              NEW GAME
-            </Button>
+            <>
+              <Button
+                color={PRIMARY_COLOR}
+                onClick={() => {
+                  setJoinedGame(false);
+                  navigate("/game");
+                }}
+              >
+                NEW GAME
+              </Button>
+
+              <div className="flex flex-col justify-center items-center my-10">
+                <h1 className="relative text-center text-6xl sm:text-7xl font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-[#0BA0E2] to-blue-600 animate-pulse drop-shadow-[0_0_25px_rgba(11,160,226,0.75)]">
+                  {resultInfo.gameResult}
+                  {/* <span className="absolute animate-pulse top-0 left-0 w-full h-full animate-glowBlur bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 opacity-30 blur-2xl rounded-lg pointer-events-none" /> */}
+                </h1>
+                <h3>BY {resultInfo.gameResultReason}</h3>
+              </div>
+            </>
           )}
 
           {playersDetails?.myRole != PlayerRolesEnum.SPECTATOR && (

@@ -24,7 +24,7 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
   const socket = useSocket();
   const navigate = useNavigate();
 
-  const gameTypesArray = Object.values(GameTypesEnum).slice(1);
+  const gameTypesArray = Object.values(GameTypesEnum).slice(0, -1);
 
   const handleRedirectGame = (redirectToGameId: string) => {
     const parsed = JSON.parse(redirectToGameId);
@@ -116,12 +116,12 @@ const GameType = ({ setJoinedGame, setGameMode, gameType, setGameType }: gameTyp
             <div className="grid grid-cols-3 gap-4 ">
               {gameTypesArray.map((gameType) => {
                 return (
-                  <button key={gameType} onClick={() => setGameType(GameTypesEnum[gameType])} className="cursor-pointer bg-[#0CB07B] py-2  text-black">
+                  <button key={gameType} onClick={() => setGameType(GameTypesEnum[gameType])} className="cursor-pointer bg-[#0CB07B] py-2 hover:scale-110 duration-200 text-black">
                     {gameType}
                   </button>
                 );
               })}
-              <button onClick={() => setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] col-span-3 row-span-3  text-black">
+              <button onClick={() => setGameType(GameTypesEnum["60|0"])} className="cursor-pointer bg-[#0CB07B] col-span-3 row-span-3 hover:scale-110 duration-200 text-black">
                 Classic 60 min
               </button>
             </div>
