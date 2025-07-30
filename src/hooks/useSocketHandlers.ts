@@ -36,6 +36,7 @@ interface useSocketHandlersProp {
   }>;
   setMoves: SetState<string[]>;
   setActiveModal: SetState<null | "abort" | "block" | "draw" | "result">;
+  setStartAbandonedWarningTimer: SetState<boolean>;
 
   chessObj: React.RefObject<Chess>;
   colorRef: React.RefObject<string>;
@@ -58,6 +59,7 @@ const useSocketHandlers = ({
   setPlayerTimeConsumedFromServer,
   setMoves,
   setActiveModal,
+  setStartAbandonedWarningTimer,
 
   chessObj,
   colorRef,
@@ -264,6 +266,7 @@ const useSocketHandlers = ({
   const handleMakeMove = (move: string) => {
     if (!chessObj?.current) return;
 
+    setStartAbandonedWarningTimer(false);
     try {
       const parsedMove = JSON.parse(move);
       try {
@@ -314,6 +317,10 @@ const useSocketHandlers = ({
     });
   };
 
+  const handleAbandonWarning = () => {
+    setStartAbandonedWarningTimer(true);
+  };
+
   useEffect(() => {
     if (!socket) return;
 
@@ -334,6 +341,7 @@ const useSocketHandlers = ({
     socket.on("block_session", handleBlockSession);
     socket.on("matchmake_timeout", handleMatchMakeTimeout);
     socket.on("opponent:reconnected", handleReconnect);
+    socket.on("abandon:warning", handleAbandonWarning);
 
     return () => {
       socket.off("state", handleState);
@@ -352,7 +360,8 @@ const useSocketHandlers = ({
       socket.off("redirect:game", handleRedirectGame);
       socket.off("block_session", handleBlockSession);
       socket.off("matchmake_timeout", handleMatchMakeTimeout);
-      socket.on("opponent:reconnected", handleReconnect);
+      socket.off("opponent:reconnected", handleReconnect);
+      socket.off("abandon:warning", handleAbandonWarning);
     };
   }, [socket]);
 };

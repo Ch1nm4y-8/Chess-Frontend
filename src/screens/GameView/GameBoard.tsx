@@ -3,13 +3,7 @@ import ChessBoardHeader from "../../components/ChessBoardHeader";
 import ChessBoard from "../../components/ChessBoard";
 import { squareMapping, reverseSquareMapping } from "../../utils/squareMapping";
 import { useSocket } from "../../contexts/SocketContext";
-import {
-  BoardSquare,
-  ColorEnum,
-  GameStatus,
-  PlayerRolesEnum,
-  playersDetailsType,
-} from "../../types/gameTypes";
+import { BoardSquare, ColorEnum, GameStatus, PlayerRolesEnum, playersDetailsType } from "../../types/gameTypes";
 import { getDestinationSquare } from "../../utils/getDestinationSquare";
 import { Chess } from "chess.js";
 
@@ -24,6 +18,8 @@ interface GameBoardProp {
   startTimer: boolean;
   timerRef: React.RefObject<number>;
   lastTimeTickRef: React.RefObject<number>;
+  startAbandonedWarningTimer: boolean;
+  setStartAbandonedWarningTimer: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const GameBoard = ({
@@ -37,6 +33,8 @@ const GameBoard = ({
   startTimer,
   timerRef,
   lastTimeTickRef,
+  startAbandonedWarningTimer,
+  setStartAbandonedWarningTimer,
 }: GameBoardProp) => {
   const socket = useSocket();
 
@@ -44,24 +42,20 @@ const GameBoard = ({
   const [player1TimeConsumed, setPlayer1TimeConsumed] = useState<number>(0);
   const [player2TimeConsumed, setPlayer2TimeConsumed] = useState<number>(0);
 
+  //abandoned timer warning
+  const [warningTimeInterval, setWarningTimeInterval] = useState<number | null>(null);
+  const warningTimeIntervalRef = useRef<number>(null);
+
   const fromMove = useRef<string | null>(null);
   const makeMove = (from: string, to: string) => {
     if (!socket || playersDetails.myRole != PlayerRolesEnum.PLAYER) return;
-    socket.emit(
-      "make_move",
-      JSON.stringify({ from: from, to: to, currentTimeStamp: Date.now() })
-    );
+    socket.emit("make_move", JSON.stringify({ from: from, to: to, currentTimeStamp: Date.now() }));
 
     if (legalMoves.length > 0) setLegalMoves([]);
     fromMove.current = null;
   };
 
-  const dragHandler = (
-    row1: number,
-    col1: number,
-    row2: number,
-    col2: number
-  ) => {
+  const dragHandler = (row1: number, col1: number, row2: number, col2: number) => {
     if (gameStatus.current == GameStatus.GAME_COMPLETED) return;
     const squareMappingFrom = squareMapping(row1, col1, colorRef.current);
     const squareMappingTo = squareMapping(row2, col2, colorRef.current);
@@ -69,11 +63,7 @@ const GameBoard = ({
   };
 
   const onClickSquareHandler = (row: number, col: number) => {
-    if (
-      !socket ||
-      gameStatus.current == GameStatus.GAME_COMPLETED ||
-      playersDetails?.myRole != PlayerRolesEnum.PLAYER
-    ) {
+    if (!socket || gameStatus.current == GameStatus.GAME_COMPLETED || playersDetails?.myRole != PlayerRolesEnum.PLAYER) {
       return;
     }
     const squareClicked = squareMapping(row, col, colorRef.current);
@@ -85,12 +75,10 @@ const GameBoard = ({
       fromMove.current = squareClicked;
       const possible_moves = chessObj.current.moves({ square: squareClicked });
 
-      const sanitizedLegalMoves: number[][] = possible_moves.map(
-        (move: string) => {
-          const destinationSquare = getDestinationSquare(move);
-          return reverseSquareMapping(destinationSquare, colorRef.current);
-        }
-      );
+      const sanitizedLegalMoves: number[][] = possible_moves.map((move: string) => {
+        const destinationSquare = getDestinationSquare(move);
+        return reverseSquareMapping(destinationSquare, colorRef.current);
+      });
       setLegalMoves(sanitizedLegalMoves);
     } else {
       makeMove(fromMove.current, squareClicked);
@@ -163,44 +151,58 @@ const GameBoard = ({
     };
   }, [startTimer]);
 
+  useEffect(() => {
+    if (startAbandonedWarningTimer) {
+      setWarningTimeInterval(9);
+      warningTimeIntervalRef.current = setInterval(() => {
+        setWarningTimeInterval((prev) => {
+          if (!prev) return null;
+          const updated = prev - 1;
+          if (updated <= 0) {
+            if (warningTimeIntervalRef.current) clearInterval(warningTimeIntervalRef.current);
+            setStartAbandonedWarningTimer(false);
+            return null;
+          }
+          return updated;
+        });
+      }, 1000);
+    } else {
+      if (warningTimeIntervalRef.current) {
+        clearInterval(warningTimeIntervalRef.current);
+        setWarningTimeInterval(null);
+      }
+    }
+
+    return () => {
+      if (warningTimeIntervalRef.current) clearInterval(warningTimeIntervalRef.current);
+    };
+  }, [startAbandonedWarningTimer]);
+
+  function secToString(sec: number | null) {
+    if (!sec) return null;
+    return `00:${sec.toString().padStart(2, "0")}`;
+  }
+
   return (
     <div className="mt-20 md:mt-0">
       <ChessBoardHeader
-        name={
-          playersDetails?.opponentPlayerName
-            ? playersDetails?.opponentPlayerName
-            : "Opponent"
-        }
-        time={msToMinSec(
-          totalGameTime -
-            (colorRef.current === ColorEnum.WHITE
-              ? player2TimeConsumed
-              : player1TimeConsumed)
-        )}
+        name={playersDetails?.opponentPlayerName ? playersDetails?.opponentPlayerName : "Opponent"}
+        time={msToMinSec(totalGameTime - (colorRef.current === ColorEnum.WHITE ? player2TimeConsumed : player1TimeConsumed))}
         imageURL={playersDetails?.opponentPlayerPhotoURL || ""}
       />
       <ChessBoard
         chessObj={chessObj.current}
         dragHandler={dragHandler}
         legalMoves={legalMoves}
-        selectedSquare={reverseSquareMapping(
-          fromMove.current,
-          colorRef.current
-        )}
+        selectedSquare={reverseSquareMapping(fromMove.current, colorRef.current)}
         board={board}
         onClickSquare={onClickSquareHandler}
       />
       <ChessBoardHeader
-        name={
-          playersDetails?.myPlayerName ? playersDetails?.myPlayerName : "Me"
-        }
-        time={msToMinSec(
-          totalGameTime -
-            (colorRef.current === ColorEnum.WHITE
-              ? player1TimeConsumed
-              : player2TimeConsumed)
-        )}
+        name={playersDetails?.myPlayerName ? playersDetails?.myPlayerName : "Me"}
+        time={msToMinSec(totalGameTime - (colorRef.current === ColorEnum.WHITE ? player1TimeConsumed : player2TimeConsumed))}
         imageURL={playersDetails?.myPlayerPhotoURL || ""}
+        warningTime={secToString(warningTimeInterval)}
       />
     </div>
   );

@@ -40,6 +40,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
   const colorRef = useRef("");
 
   const [activeModal, setActiveModal] = useState<null | "abort" | "block" | "draw" | "result">(null);
+  const [startAbandonedWarningTimer, setStartAbandonedWarningTimer] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 1090;
@@ -78,6 +79,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
     lastTimeTickRef,
     playersDetailsRef,
     gameStatus,
+    setStartAbandonedWarningTimer,
   });
 
   useEffect(() => {
@@ -135,12 +137,12 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
       <ToastContainer position="top-center" />
 
       <div className="flex flex-wrap h-[100vh] justify-around items-center lg:flex-row">
-        <div className="order-2 lg:order-1 w-[90%] md:w-1/3 lg:w-1/5 flex flex-col gap-10">
+        <div className="order-2 lg:order-1  w-[90%] md:w-1/3 lg:w-1/5 flex flex-col gap-10">
           {colorRef.current && <VideoCallView />}
           {moves.length > 0 && <MovesView moves={moves} />}
         </div>
 
-        <div className="order-1 pt-5 lg:order-2 w-full md:w-2/3 lg:w-3/6 flex flex-col justify-center items-center md:h-[100vh] ">
+        <div className="order-1 pt-5  lg:order-2 w-full md:w-2/3 lg:w-3/6 flex flex-col justify-center items-center md:h-[100vh] ">
           <GameBoard
             playersDetails={playersDetails}
             colorRef={colorRef}
@@ -152,6 +154,8 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
             startTimer={startTimer}
             lastTimeTickRef={lastTimeTickRef}
             timerRef={timerRef}
+            startAbandonedWarningTimer={startAbandonedWarningTimer}
+            setStartAbandonedWarningTimer={setStartAbandonedWarningTimer}
           />
 
           {isMobile && colorRef?.current && (
@@ -180,12 +184,12 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
             </div>
           )}
         </div>
-        <div className="order-3 w-[90%] lg:w-2/8 flex flex-col justify-center h-[60vh] lg:h-[100vh]">
+        <div className="order-3 w-[90%]  lg:w-2/8 flex flex-col justify-center h-[60vh] lg:h-[100vh]">
           {inviteGameIdToSend && !startTimer && gameMode == GameModeEnum.INVITE && <InviteGameId inviteGameIdToSend={inviteGameIdToSend} />}
 
           {/* {resultInfo?.gameResult && <h1 className="text-white text-4xl text-center">{resultInfo.gameResult + " BY " + resultInfo.gameResultReason}</h1>} */}
           {resultInfo?.gameResult && (
-            <>
+            <div>
               <Button
                 color={PRIMARY_COLOR}
                 onClick={() => {
@@ -203,7 +207,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
                 </h1>
                 <h3>BY {resultInfo.gameResultReason}</h3>
               </div>
-            </>
+            </div>
           )}
 
           {playersDetails?.myRole != PlayerRolesEnum.SPECTATOR && (
@@ -236,7 +240,7 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
               {colorRef.current ? (
                 <ChatView sendChatHandler={sendChatHandler} messages={messages} playerDetails={playersDetails} />
               ) : (
-                <div className=" h-[80vh] flex flex-col">
+                <div className=" h-[80vh]  pt-20 flex flex-col">
                   <ChessLoader />
                   <h1 className="text-2xl my-5">Waiting for a player to connect....</h1>
                   <Button color="#0CB07B" onClick={cancelJoinGameHandler}>
@@ -248,77 +252,6 @@ const GameView = ({ setJoinedGame, gameMode, gameType, gameId }: GameBoardProp) 
           )}
         </div>
       </div>
-
-      {/* Make sure this modal renders only when required */}
-      {/* <Modal modalName="abort_game_modal">
-        <div>
-          <h1 className="text-3xl pb-4">Are you sure you want to abort</h1>
-          <div className="flex justify-around">
-            <Button
-              color="#0BA0E2"
-              onClick={() => {
-                abortGameHandler(true);
-              }}
-            >
-              Yes
-            </Button>
-            <Button
-              color="#0CB07B"
-              onClick={() => {
-                abortGameHandler(false);
-              }}
-            >
-              No
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal modalName="block_session_modal">
-        <div>
-          <h1 className="text-2xl pb-4">
-            Looks like you’re active in another tab.
-          </h1>
-          <h2 className="text-xl pb-4">
-            You can continue playing there or click below to switch to this
-            session.
-          </h2>
-          <div className="flex justify-around">
-            <Button
-              color="#0BA0E2"
-              onClick={() => {
-                window.location.reload();
-              }}
-            >
-              Play Here
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal modalName="draw_offer_modal">
-        <div>
-          <h1 className="text-3xl pb-4">Opponent Offered Draw</h1>
-          <div className="flex justify-around">
-            <Button
-              color="#0BA0E2"
-              onClick={() => {
-                offerDrawClickHandler(true);
-              }}
-            >
-              Accept
-            </Button>
-            <Button
-              color="#0CB07B"
-              onClick={() => {
-                offerDrawClickHandler(false);
-              }}
-            >
-              Reject
-            </Button>
-          </div>
-        </div>
-      </Modal> */}
 
       <Modal isOpen={activeModal == "abort"} onClose={() => setActiveModal(null)}>
         <div>
